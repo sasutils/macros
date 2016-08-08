@@ -1,4 +1,4 @@
-%macro qlist2
+%macro qlist
 /*----------------------------------------------------------------------
 Adds quotes to each word in a list, and optionally separate multiple
 words with a comma and adds parentheses to the entire string.
@@ -58,18 +58,4 @@ Process each word individually using the SCAN() and QUOTE() functions.
 Add parentheses when requested.
 -----------------------------------------------------------------------;
 %*;&rp
-%mend qlist2;
-
-%put where=name in %qlist(%bquote(Alfred  Don Mary),dsd=1,delimit=,comma=1,quote=1);
-%put where=name in %qlist2(%bquote(Alfred  Don Mary),dsd=1,delimit=,comma=1,quote=1);
-%put |%qlist(paren=0)|;
-%put |%qlist2(paren=0)|;
-
-%let x1=%qlist(a b c,comma=0);
-%let x2=%qlist2(a b c,comma=0);
-data _null_;
-  set sashelp.vmacro;
-  where name in ('X1','X2');
-  hex=putc(value,cats('$HEX',2*length(value),'.'));
-  put (name value hex) (=/);
-run;
+%mend qlist;
