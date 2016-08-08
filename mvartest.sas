@@ -1,15 +1,14 @@
 %macro mvartest
 /*----------------------------------------------------------------------
-Tests for the existence of a macro variable.
+Test for the existence of a macro variable with option scope limitation
 ----------------------------------------------------------------------*/
 (mvar   /* Name of macro variable */
 ,scope  /* Macro scope to check (optional) */
 );
 /*----------------------------------------------------------------------
-This code was developed by HOFFMAN CONSULTING as part of a FREEWARE
-macro tool set. Its use is restricted to current and former clients of
-HOFFMAN CONSULTING as well as other professional colleagues. Questions
-and suggestions may be sent to TRHoffman@sprynet.com.
+This macro extends the functionality of the %SYMEXIST() macro function
+by allowing you the check for the existance of the macro variable in
+a particular macro's scope.
 -----------------------------------------------------------------------
 Usage:
 
@@ -33,10 +32,6 @@ observations if not defined by the user of the NOBS macro ;
 Notes:
 
 Returns a 1 when the macro variable exists and 0 otherwise.
------------------------------------------------------------------------
-History:
-
-11MAR99 TRHoffman Creation - with much help from Tom Abernathy.
 ----------------------------------------------------------------------*/
 %local dsid rc where;
 
