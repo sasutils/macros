@@ -1,7 +1,6 @@
 %macro parmv
 /*----------------------------------------------------------------------
-Macro parameter validation utility. Returns parmerr=1 and writes
-ERROR message to log for parameters with invalid values.
+Parameter validation with standard error message generation.
 ----------------------------------------------------------------------*/
 (_parm     /* Macro parameter name (REQ)                              */
 ,_val=     /* List of valid values or POSITIVE for any positive       */
@@ -25,15 +24,31 @@ ERROR message to log for parameters with invalid values.
 );
 
 /*----------------------------------------------------------------------
-This code was developed by HOFFMAN CONSULTING as part of a FREEWARE
-macro tool set. Its use is restricted to current and former clients of
-HOFFMAN CONSULTING as well as other professional colleagues. Questions
-and suggestions may be sent to TRHoffman@frontiernet.net.
------------------------------------------------------------------------
-Usage:
+Notes:
+
+The calling macro requires local variable PARMERR for return error code.
+
+Invoke macro PARMV once for each macro parameter. After the last
+invocation branch to the macro's end whenever PARMERR equals 1 (e.g.,
+%if (&parmerr) %then %goto quit;).
+
+Macro PARMV can be disabled (except for changing case) by setting the
+global macro variable S_PARMV to 0.
+
+PARMV tool cannot be used for macros variables with names that are used
+as PARMV parameters or local macro variables.
+
+Use the _MSG parameter to set PARMERR to 1 and issue a message based on
+validation criteria within the calling program.
+
+Note that for efficiency reasons, PARMV does not validate its own
+parameters. Only code valid values for the _REQ, _WORDS, _CASE, and
+_VARCHK parameters.
+
+------------------------------------------------------------------------
+Usage example:
 
 %macro test;
-
 %local parmerr;
 %parmv(INTERVAL,_req=1,_words=1)
 %parmv(IVAR,_req=1)
@@ -48,33 +63,15 @@ Usage:
 %if (&parmerr) %then %goto quit;
 ....
 %quit:
-
 %mend test;
-------------------------------------------------------------------------
-Notes:
-
-The calling macro requires local variable PARMERR to return error code.
-
-Invoke macro PARMV once for each macro parameter. After the last
-invocation branch to the macro's end whenever PARMERR equals 1 (e.g.,
-%if (&parmerr) %then %goto quit;).
-
-Macro PARMV can be disabled (except for changing case) by setting the
-global macro variable S_PARMV to 0.
-
-Macros using the PARMV tool may not have any parameters in common with
-PARMV parameters.
-
-Use the _MSG parameter to set parmerr to 1 and issue a message based on
-validation criteria within the calling program.
-
-Note that for efficiency reasons, PARMV does not validate its own
-parameters. Only code valid values for the _REQ, _WORDS, _CASE, and
-_VARCHK parameters.
 
 -----------------------------------------------------------------------
 History:
 
+This code was developed by HOFFMAN CONSULTING as part of a FREEWARE
+macro tool set. Its use is restricted to current and former clients of
+HOFFMAN CONSULTING as well as other professional colleagues. 
+-----------------------------------------------------------------------
 09SEP96 TRHoffman  Creation
 16MAR98 TRHoffman  Replaced QTRIM autocall macro with QSYSFUNC and TRIM
                    in order to avoid conflict with the i command line
@@ -91,24 +88,25 @@ History:
 20MAR05 abernt     Added _DEFVAR parameter. Modified final unquote step
                    to skip unquoting if strings includes quote or dquote
                    (in addition to % and &).
+2016-08-16 abernt  Take advantage of SAS 9.4 macro enhancements               
 ----------------------------------------------------------------------*/
 %local _macro _word _n _vl _pl _ml _error _parm_mv;
 
 %*----------------------------------------------------------------------
-Set calling macro name.
+Set calling macro name to use in error messages.
 -----------------------------------------------------------------------;
 %let _macro=%sysmexecname(%sysmexecdepth-1);
 %if %sysmexecdepth>1 %then %let _macro=Macro &_macro;
 
 %*----------------------------------------------------------------------
-Macro sure return macro variables exists.
+Make sure return macro variables exists.
 -----------------------------------------------------------------------;
 %if ^%symexist(parmerr) %then %global parmerr;
 %if ^%symexist(s_msg) %then %global s_msg;
 %if ^%symexist(s_parmv) %then %let s_parmv=1;
 
 %*----------------------------------------------------------------------
-Initialize error flags, and valid (vl) flag.
+Initialize error flags, and returned message.
 -----------------------------------------------------------------------;
 %if (&parmerr = ) %then %do;
   %let parmerr = 0;
@@ -122,12 +120,8 @@ Support undefined values of the _PARM macro variable.
 %if (&_varchk) %then %do;
   %let _parm_mv = macro variable;
   %if ^%symexist(&_parm) %then %do;
-    %if (&_req) %then %do;
-      %local &_parm ;
-    %end;
-    %else %do;
-      %global &_parm ;
-    %end;
+    %if (&_req) %then %local &_parm ;
+    %else %global &_parm ;
   %end;
 %end;
 %else %let _parm_mv = parameter;
@@ -275,7 +269,7 @@ Write error messages
 
   %if (&_error = 1) %then %do;
     %put ERROR: &&&_parm is not a valid value for the &_parm &_parm_mv..;
-    %put ERROR: Only positive integers are allowed.;
+    %put ERROR: Only &_val integers are allowed.;
     %let _vl = 0;
   %end;
 
