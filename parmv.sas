@@ -70,7 +70,7 @@ History:
 
 This code was developed by HOFFMAN CONSULTING as part of a FREEWARE
 macro tool set. Its use is restricted to current and former clients of
-HOFFMAN CONSULTING as well as other professional colleagues. 
+HOFFMAN CONSULTING as well as other professional colleagues.
 -----------------------------------------------------------------------
 09SEP96 TRHoffman  Creation
 16MAR98 TRHoffman  Replaced QTRIM autocall macro with QSYSFUNC and TRIM
@@ -88,7 +88,7 @@ HOFFMAN CONSULTING as well as other professional colleagues.
 20MAR05 abernt     Added _DEFVAR parameter. Modified final unquote step
                    to skip unquoting if strings includes quote or dquote
                    (in addition to % and &).
-2016-08-16 abernt  Take advantage of SAS 9.4 macro enhancements               
+2016-08-16 abernt  Take advantage of SAS 9.4 macro enhancements
 ----------------------------------------------------------------------*/
 %local _macro _word _n _vl _pl _ml _error _parm_mv;
 
@@ -113,8 +113,8 @@ Check that parameter exists. Quote parameter value.
 -----------------------------------------------------------------------;
 %if %symexist(&_parm) %then %let &_parm=%superq(&_parm);
 %else %do;
-  %if (&_req) %then %let _error=6;
-  %if (&_varchk) %then %global &_parm ;
+  %if (&_varchk) %then %let _error=6;
+  %if (&_req) & ^(&varhck) %then %global &_parm ;
   %else %local &_parm ;
 %end;
 
@@ -189,7 +189,8 @@ Error 4: Value required
 Error 5: _MSG specified
 Error 6: Parameter does not exist
 -----------------------------------------------------------------------;
-%if (&_ml) %then %let _error = 5;
+%if _error=6 %then ;
+%else %if (&_ml) %then %let _error = 5;
 
 %*----------------------------------------------------------------------
 Macro variable specified by _PARM is not null.
@@ -298,7 +299,7 @@ Adjust message based on whether _VARCHK was set.
     %put ERROR: &_msg..;
   %end;
 
-  %else %if (&_error = 6) %then 
+  %else %if (&_error = 6) %then
     %put ERROR: The &_parm &_parm_mv does not exist.
   ;
 
