@@ -14,9 +14,9 @@ Parameter validation with standard error message generation.
            /* L=lower,N=no conversion.                                */
 ,_msg=     /* When specified, set parmerr to 1 and writes _msg as the */
            /* last error message.                                     */
-,_varchk=0 /* 0=Assume that variable defined by _parm exists.         */
-           /* 1=Check for existence - issue global statement if not   */
-           /* defined (and _req=0).                                   */
+,_varchk=0 /* 1=Issue global statement if parameter does not exist.   */
+           /* 0=Will create local macro so that checks of _DEF and    */
+           /*   _DEFVAR values will proceed.                          */
 ,_defvar=  /* Name of macro variable to check for a default value     */
            /* when parameter value not assigned by calling macro.     */
 ,_def=     /* Default parameter value when not assigned by calling    */
@@ -93,12 +93,6 @@ HOFFMAN CONSULTING as well as other professional colleagues.
 %local _macro _word _n _vl _pl _ml _error _parm_mv;
 
 %*----------------------------------------------------------------------
-Set calling macro name to use in error messages.
------------------------------------------------------------------------;
-%let _macro=%sysmexecname(%sysmexecdepth-1);
-%if %sysmexecdepth>1 %then %let _macro=Macro &_macro;
-
-%*----------------------------------------------------------------------
 Make sure return macro variables exists.
 -----------------------------------------------------------------------;
 %if ^%symexist(parmerr) %then %global parmerr;
@@ -115,16 +109,14 @@ Initialize error flags, and returned message.
 %let _error = 0;
 
 %*----------------------------------------------------------------------
-Support undefined values of the _PARM macro variable.
+Check that parameter exists. Quote parameter value.
 -----------------------------------------------------------------------;
-%if (&_varchk) %then %do;
-  %let _parm_mv = macro variable;
-  %if ^%symexist(&_parm) %then %do;
-    %if (&_req) %then %local &_parm ;
-    %else %global &_parm ;
-  %end;
+%if %symexist(&_parm) %then %let &_parm=%superq(&_parm);
+%else %do;
+  %if (&_req) %then %let _error=6;
+  %if (&_varchk) %then %global &_parm ;
+  %else %local &_parm ;
 %end;
-%else %let _parm_mv = parameter;
 
 %*----------------------------------------------------------------------
 Get lengths of _val, _msg, and _parm to use as numeric switches.
@@ -190,11 +182,12 @@ Bail out when no parameter validation is requested
 %*----------------------------------------------------------------------
 Error processing - parameter value not null
 
-Error 1: Invalid value - not a positive integer
+Error 1: Invalid value - not a positive/nonnegative integer
 Error 2: Invalid value - not in valid list
-Error 3: Single value only
-Error 4: Value required.
+Error 3: Multiple values not allowed
+Error 4: Value required
 Error 5: _MSG specified
+Error 6: Parameter does not exist
 -----------------------------------------------------------------------;
 %if (&_ml) %then %let _error = 5;
 
@@ -264,6 +257,19 @@ Write error messages
 -----------------------------------------------------------------------;
 %if (&_error) %then %do;
   %let parmerr = 1;
+
+%*----------------------------------------------------------------------
+Get calling macro name to use in error messages.
+-----------------------------------------------------------------------;
+  %let _macro=%sysmexecname(%sysmexecdepth-1);
+  %if %sysmexecdepth>1 %then %let _macro=Macro &_macro;
+
+%*----------------------------------------------------------------------
+Adjust message based on whether _VARCHK was set.
+-----------------------------------------------------------------------;
+  %if (&_varchk) %then %let _parm_mv = macro variable;
+  %else %let _parm_mv = parameter;
+
   %put %str( );
   %put ERROR: &_macro user error.;
 
@@ -274,7 +280,8 @@ Write error messages
   %end;
 
   %else %if (&_error = 2) %then
-   %put ERROR: &&&_parm is not a valid value for the &_parm &_parm_mv..;
+    %put ERROR: &&&_parm is not a valid value for the &_parm &_parm_mv..
+  ;
 
   %else %if (&_error = 3) %then %do;
     %put ERROR: &&&_parm is not a valid value for the &_parm &_parm_mv..;
@@ -282,13 +289,19 @@ Write error messages
   %end;
 
   %else %if (&_error = 4) %then
-   %put ERROR: A value for the &_parm &_parm_mv is required.;
+    %put ERROR: A value for the &_parm &_parm_mv is required.
+  ;
 
   %else %if (&_error = 5) %then %do;
     %if (&_parm ^= ) %then
     %put ERROR: &&&_parm is not a valid value for the &_parm &_parm_mv..;
     %put ERROR: &_msg..;
   %end;
+
+  %else %if (&_error = 6) %then 
+    %put ERROR: The &_parm &_parm_mv does not exist.
+  ;
+
 
   %if (&_vl) %then
    %put ERROR: Allowable values are: &_val..;
