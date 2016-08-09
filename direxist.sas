@@ -47,16 +47,3 @@ Return the value as the result of the macro.
 -----------------------------------------------------------------------;
 &return
 %mend;
-/*
-options nosymbolgen nomlogic nosource;
-%put %direxist(48^3#45) &sysrc 48^3#45;
-%put %direxist(direxist.sas) &sysrc direxist.sas;
-%put %direxist(sasuser.800) &sysrc sasuser.800;
-%put %direxist(%str(RCS/citest,v)) &sysrc RCS/citest,v;
-%put %direxist(%str()) &sysrc '%str()';
-%put %direxist &sysrc **nothing**;
-%put %direxist(a) &sysrc a;
-%put %direxist(.) &sysrc .;
-%put %direxist(..) &sysrc ..;
-options nosymbolgen nomlogic source;
-*/
