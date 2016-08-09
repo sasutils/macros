@@ -5,3 +5,4 @@ SAS Utility Macros
 * [dquote](dquote.sas) - Quote string with double quote characters
 * [parmv](parmv.sas) - Parameter validation
 * [mvartest](mvartest.sas) - Macro variable existance test
+* [direxist](direxist.sas) - Test if path is a directory
