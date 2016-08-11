@@ -129,13 +129,15 @@ Set default values for VARLIST parameter.
 proc transpose data=&dsn(&dsnopts obs=0) ;
   var &varlist;
 run;
+
 %if (&syserr) %then %do;
+%*----------------------------------------------------------------------
+When PROC TRANSPOSE has trouble then generate message and skip writing.
+-----------------------------------------------------------------------;
   %put ERROR: Unable to generate variable names. &=varlist ;
   %let parmerr=1;
-  proc delete data=&syslast; run;
-  %goto quit;
 %end;
-
+%else %do;
 *----------------------------------------------------------------------;
 * Write header row ;
 *----------------------------------------------------------------------;
@@ -147,18 +149,19 @@ data _null_;
 run;
 
 *----------------------------------------------------------------------;
-* Remove the variable names dataset. ;
-*----------------------------------------------------------------------;
-proc delete data=&syslast ;
-run;
-
-*----------------------------------------------------------------------;
 * Write data rows ;
 *----------------------------------------------------------------------;
 data _null_;
   set &dsn(&dsnopts);
   file &outfile mod dlm=&dlmq dsd lrecl=1000000 ;
   put (&varlist) (+0);
+run;
+%end;
+
+*----------------------------------------------------------------------;
+* Remove the variable names dataset. ;
+*----------------------------------------------------------------------;
+proc delete data=&syslast ;
 run;
 
 %quit:
