@@ -52,7 +52,7 @@ History:
 08MAY00 TRHoffman Added MODE parameter.
 2016-08-12 abernt Removed the code that was stripping macro triggers.
                   Replaced with QUOTE()/DEQUOTE() calls.
-                  Added MODE=4 and EOL= parameter.
+                  Added LINENO and EOL parameters.
 ----------------------------------------------------------------------*/
 %local filerc rc fileref j fid text n;
 
