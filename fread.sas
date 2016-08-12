@@ -85,7 +85,7 @@ Read through file and process each line.
     %let rc = %sysfunc(fget(&fid,text,32767));
     %if (&mode = 1) %then %do;
       %local w&n;
-      %let w&n = %superq(text) ;
+      %let w&n = %sysfunc(quote(%superq(text),%str(%')));
     %end;
     %else %if (&mode = 2) %then %do;
       %if ^(&lineno) %then %put %superq(text) ;
@@ -110,8 +110,7 @@ might be macro triggers.
 %if (&mode = 1) %then %do;
   %*;%nrstr(%let )n=&n%str(;)
   %do j = 1 %to &n;
-    %*;%nrstr(%let )w&j=%nrstr(%qsysfunc)(dequote(%*;
-    %*;%sysfunc(quote(%superq(w&j),%str(%')))))%str(;)%*;
+    %*;%nrstr(%let )w&j=%nrstr(%qsysfunc)(dequote(&&w&j))%str(;)%*;
   %end;
 %end;
 
