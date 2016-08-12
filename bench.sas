@@ -1,17 +1,21 @@
-%macro bench;
-%*----------------------------------------------------------------------
+%macro bench
+/*----------------------------------------------------------------------
 Measures elapsed time (in seconds) between sucessive invocations
-------------------------------------------------------------------------
-This code was developed by HOFFMAN CONSULTING as part of a FREEWARE
-macro tool set. Its use is restricted to current and former clients of
-HOFFMAN CONSULTING as well as other professional colleagues. Questions
-and suggestions may be sent to TRHoffman@sprynet.com.
-----------------------------------------------------------------------;
-%global _bench;
+----------------------------------------------------------------------*/
+(mvar /* Macro variable used for recording start time (default=_bench)*/
+);
+/*----------------------------------------------------------------------
+Call it once to start the timing and then a second time to report the
+elapsed time and clear the saved time.
 
-%if (&_bench =) %then %let _bench = %sysfunc(datetime());
+Use different values for MVAR to time multiple overlapping periods.
+----------------------------------------------------------------------*/
+%if (&mvar=) %then %let mvar=_bench;
+%if ^%symexist(&mvar) %then %global &mvar;
+
+%if (&&&mvar =) %then %let &mvar = %sysfunc(datetime());
 %else %do;
-  %put Elapsed seconds = %sysevalf(%sysfunc(datetime()) - &_bench);
-  %let _bench =;
+  %put NOTE: Elapsed seconds = %sysevalf(%sysfunc(datetime()) - &&&mvar);
+  %let &mvar =;
 %end;
 %mend bench;
