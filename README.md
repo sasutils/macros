@@ -7,3 +7,4 @@ SAS Utility Macros
 * [mvartest](mvartest.sas) - Macro variable existance test
 * [direxist](direxist.sas) - Test if path is a directory
 * [csvfile](csvfile.sas) - Write SAS dataset as CSV file
+* [bench](bench.sas) - Time interval between calls
