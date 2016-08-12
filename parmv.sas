@@ -2,31 +2,29 @@
 /*----------------------------------------------------------------------
 Parameter validation with standard error message generation.
 ----------------------------------------------------------------------*/
-(_parm     /* Macro parameter name (REQ)                              */
-,_val=     /* List of valid values or POSITIVE for any positive       */
-           /* integer or NONNEGATIVE for any non-negative integer.    */
-           /* When _val=0 1, OFF N NO F FALSE snd ON Y YES T TRUE     */
-           /* (case insensitive) are acceptable aliases for 0 and 1,  */
-           /* respectively.                                           */
-,_req=0    /* Value required? 0=No, 1=Yes.                            */
+(_parm     /* Macro parameter name (REQ) */
+,_val=     /* Space delimited list of valid values. (OPT) */
+      /* There are three special values of _VAL. To test for integers */
+      /* use either _val=POSITIVE or _val=NONNEGATIVE. To test for    */
+      /* boolean values use _val=0 1. PARMV will accept the aliases   */
+      /* (OFF N NO F FALSE) or (ON Y YES T TRUE) and convert them to  */
+      /* 0 or 1, respectively. To test just for 1 and 0 then use */
+      /* _val=1 0 instead. */
+,_req=0    /* Is a value required? 0=No, 1=Yes.                       */
 ,_words=0  /* Multiple values allowed? 0=No ,1=Yes                    */
-,_case=U   /* Convert case of parameter value & _val? U=upper,        */
-           /* L=lower,N=no conversion.                                */
-,_msg=     /* When specified, set parmerr to 1 and writes _msg as the */
-           /* last error message.                                     */
-,_varchk=0 /* 1=Issue global statement if parameter does not exist.   */
-           /* 0=Will create local macro so that checks of _DEF and    */
-           /*   _DEFVAR values will proceed.                          */
+,_case=U   /* Change case of value? U=Upper, L=Lower, N=No conversion */
+,_force=0  /* Force macro variable to exist? 0=No, 1=Yes.             */
 ,_defvar=  /* Name of macro variable to check for a default value     */
            /* when parameter value not assigned by calling macro.     */
 ,_def=     /* Default parameter value when not assigned by calling    */
            /* macro or by macro variable named in _defvar.            */
+,_msg=     /* When specified, set parmerr to 1 and writes _msg as the */
+           /* last error message.                                     */
 );
-
 /*----------------------------------------------------------------------
 Notes:
 
-The calling macro requires local variable PARMERR for return error code.
+The calling macro requires local variable PARMERR to return error code.
 
 Invoke macro PARMV once for each macro parameter. After the last
 invocation branch to the macro's end whenever PARMERR equals 1 (e.g.,
@@ -35,15 +33,19 @@ invocation branch to the macro's end whenever PARMERR equals 1 (e.g.,
 Macro PARMV can be disabled (except for changing case) by setting the
 global macro variable S_PARMV to 0.
 
-PARMV tool cannot be used for macros variables with names that are used
-as PARMV parameters or local macro variables.
+When _VAL=0 1 then parameter will default to 0 when empty.
+
+PARMV tool cannot be used for macros variables with names that match
+the parameters (_PARM _VAL _REQ _WORDS _CASE _FORCE _DEFVAR _DEF _MSG)
+or local macro variables (_MACRO _WORD _N _VL _PL _ML _ERROR _PARM_MV)
+used by PARMV itself.
 
 Use the _MSG parameter to set PARMERR to 1 and issue a message based on
 validation criteria within the calling program.
 
 Note that for efficiency reasons, PARMV does not validate its own
-parameters. Only code valid values for the _REQ, _WORDS, _CASE, and
-_VARCHK parameters.
+parameters. Only code valid values for the _PARM, _REQ, _WORDS, _CASE,
+and _FORCE parameters.
 
 ------------------------------------------------------------------------
 Usage example:
@@ -109,13 +111,15 @@ Initialize error flags, and returned message.
 %let _error = 0;
 
 %*----------------------------------------------------------------------
-Check that parameter exists. Quote parameter value.
+Quote the parameter value.
+
+When parameter does not exist then create it as local or gobal based on
+the setting of _FORCE.
 -----------------------------------------------------------------------;
 %if %symexist(&_parm) %then %let &_parm=%superq(&_parm);
 %else %do;
-  %if (&_varchk) %then %let _error=6;
-  %if (&_req) & ^(&varhck) %then %global &_parm ;
-  %else %local &_parm ;
+  %if (&_force) %then %global &_parm;
+  %else %local &_parm;
 %end;
 
 %*----------------------------------------------------------------------
@@ -150,20 +154,19 @@ values conditional on the value of the _CASE parameter.
 -----------------------------------------------------------------------;
 %if ^(&_ml) %then %do;
   %let _parm = %upcase(&_parm);
-  %let _case = %upcase(&_case);
 
-  %if (&_case = U) %then %do;
+  %if (%qupcase(&_case) = U) %then %do;
     %let &_parm = %qupcase(&&&_parm);
     %let _val = %qupcase(&_val);
   %end;
-  %else %if (&_case = L) %then %do;
+  %else %if (%qupcase(&_case) = L) %then %do;
     %if (&_pl) %then %let &_parm = %qsysfunc(lowcase(&&&_parm));
     %if (&_vl) %then %let _val = %qsysfunc(lowcase(&_val));
   %end;
-  %else %let _val = %quote(&_val);
 
 %*----------------------------------------------------------------------
 When _val=0 1, map supported aliases into 0 or 1.
+If no value and not required then default to 0.
 -----------------------------------------------------------------------;
   %if (&_val = 0 1) %then %do;
     %let _val=%quote(0 (or OFF NO N FALSE F) 1 (or ON YES Y TRUE T));
@@ -171,6 +174,7 @@ When _val=0 1, map supported aliases into 0 or 1.
      %let &_parm = 0;
     %else %if %index(%str( ON YES Y TRUE T ),%str( &&&_parm )) %then
      %let &_parm = 1;
+    %if ^(&_req) and ^(&_pl) %then %let &_parm=0;
   %end;
 %end;
 
@@ -180,22 +184,28 @@ Bail out when no parameter validation is requested
 %if (&s_parmv = 0) %then %goto quit;
 
 %*----------------------------------------------------------------------
-Error processing - parameter value not null
-
-Error 1: Invalid value - not a positive/nonnegative integer
-Error 2: Invalid value - not in valid list
-Error 3: Multiple values not allowed
-Error 4: Value required
-Error 5: _MSG specified
 Error 6: Parameter does not exist
 -----------------------------------------------------------------------;
-%if _error=6 %then ;
+%if (&_req) and ^%symexist(&_parm) %then %let_error=6;
+
+%*----------------------------------------------------------------------
+Error 5: _MSG specified
+-----------------------------------------------------------------------;
 %else %if (&_ml) %then %let _error = 5;
 
 %*----------------------------------------------------------------------
 Macro variable specified by _PARM is not null.
 -----------------------------------------------------------------------;
 %else %if (&_pl) %then %do;
+
+%*----------------------------------------------------------------------
+Error processing - parameter value not null
+
+Error 1: Invalid value - not a positive/nonnegative integer
+Error 2: Invalid value - not in valid list
+Error 3: Multiple values not allowed
+Error 4: Value required
+-----------------------------------------------------------------------;
 
 %*----------------------------------------------------------------------
 Loop through possible list of words in the _PARM macro variable.
@@ -266,9 +276,9 @@ Get calling macro name to use in error messages.
   %if %sysmexecdepth>1 %then %let _macro=Macro &_macro;
 
 %*----------------------------------------------------------------------
-Adjust message based on whether _VARCHK was set.
+Adjust message based on whether _FORCE was set.
 -----------------------------------------------------------------------;
-  %if (&_varchk) %then %let _parm_mv = macro variable;
+  %if (&_force) %then %let _parm_mv = macro variable;
   %else %let _parm_mv = parameter;
 
   %put %str( );
@@ -294,7 +304,7 @@ Adjust message based on whether _VARCHK was set.
   ;
 
   %else %if (&_error = 5) %then %do;
-    %if (&_parm ^= ) %then
+    %if (&_parm ^= ) and (&_pl) %then
     %put ERROR: &&&_parm is not a valid value for the &_parm &_parm_mv..;
     %put ERROR: &_msg..;
   %end;
@@ -305,7 +315,8 @@ Adjust message based on whether _VARCHK was set.
 
 
   %if (&_vl) %then
-   %put ERROR: Allowable values are: &_val..;
+    %put ERROR: Allowable values are: &_val..
+  ;
 
   %if %length(&_msg) %then %let s_msg = &_msg;
   %else %let s_msg = Problem with &_macro &_parm_mv values - see
