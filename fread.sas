@@ -12,7 +12,8 @@ Reads file using only macro code.
 );
 
 /*----------------------------------------------------------------------
-Read a file. The resulting values will be macro quoted.
+Read a file to (mode=1) local macro variables, (mode=2) the log or
+(mode=3) the macro function result. Values will be macro quoted.
 
 MODE=1
 ------
@@ -116,10 +117,9 @@ Clear fileref when assigned by macro,
 
 %if (&mode = 1) %then %do;
 %*----------------------------------------------------------------------
-Create quoted %let statements to be used by calling program to create
-macro variables.
+Create quoted %let statements to recreate the macro variables.
 
-Use %QSYSFUNC(DEQUOTE()) to remove the quoting added to the local mvars.
+Use %QSYSFUNC(DEQUOTE()) to remove the quoting added above.
 -----------------------------------------------------------------------;
   %*;%nrstr(%let )n=&n%str(;)
   %do j = 1 %to &n;
