@@ -8,3 +8,4 @@ SAS Utility Macros
 * [direxist](direxist.sas) - Test if path is a directory
 * [csvfile](csvfile.sas) - Write SAS dataset as CSV file
 * [bench](bench.sas) - Time interval between calls
+* [fread](fread.sas) - Reads file using only macro code
