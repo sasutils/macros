@@ -1,14 +1,14 @@
 %macro fread
 /*----------------------------------------------------------------------
-Reads file using only macro code.
+Read file using only macro code.
 ----------------------------------------------------------------------*/
 (file      /* Fileref or path name */
 ,mode=1    /* Operation Mode */
    /* Mode=1 returns macro variable array (requires %UNQUOTE()) */
    /* Mode=2 puts file contents to SAS log */
    /* Mode=3 returns file contents as macro result */
-,eol=|     /* Characters to output after each line when MODE=3 */
 ,lineno=0  /* Include line numbers when Mode=2? 0=No 1=Yes */
+,eol=|     /* Characters to output after each line when MODE=3 */
 );
 
 /*----------------------------------------------------------------------
@@ -36,7 +36,6 @@ MODE=3
 ------
 Return the file as the result of the macro call. You can use the EOL=
 parameter to insert a delimiter string between the lines.
-
 
 Note files larger than macro variable limit (64K bytes) will not work
 with MODE=1 or MODE=3.
@@ -68,7 +67,7 @@ Assign fileref when physical file.
 %else %let fileref = &file;
 
 %*----------------------------------------------------------------------
-Initialize line block counter.
+Initialize line counter.
 -----------------------------------------------------------------------;
 %let n = 0;
 
@@ -85,26 +84,26 @@ Read through file and process each line.
     %let n = %eval(&n + 1);
     %let rc = %sysfunc(fget(&fid,text,32767));
 
+    %if (&mode = 1) %then %do;
 %*----------------------------------------------------------------------
 MODE=1 Store the quoted value into local macro variable.
 -----------------------------------------------------------------------;
-    %if (&mode = 1) %then %do;
       %local w&n;
       %let w&n = %sysfunc(quote(%superq(text),%str(%')));
     %end;
 
+    %else %if (&mode = 2) %then %do;
 %*----------------------------------------------------------------------
 MODE=2 Write line to LOG with optional line numbers.
 -----------------------------------------------------------------------;
-    %else %if (&mode = 2) %then %do;
       %if ^(&lineno) %then %put %superq(text) ;
       %else %put %sysfunc(putn(&n,Z5)) %superq(text) ;
     %end;
 
+    %else %do;
 %*----------------------------------------------------------------------
 MODE=3 Return the line with optional end of line string.
 -----------------------------------------------------------------------;
-    %else %do;
       %*;&sep.%superq(text)
       %let sep=%superq(eol);
     %end;
