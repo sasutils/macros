@@ -55,7 +55,7 @@ History:
                   Replaced with QUOTE()/DEQUOTE() calls.
                   Added LINENO and EOL parameters.
 ----------------------------------------------------------------------*/
-%local filerc rc fileref j fid text n;
+%local filerc fileref n fid text rc j sep ;
 
 %*----------------------------------------------------------------------
 Assign fileref when physical file.
@@ -98,13 +98,16 @@ MODE=2 Write line to LOG with optional line numbers.
 -----------------------------------------------------------------------;
     %else %if (&mode = 2) %then %do;
       %if ^(&lineno) %then %put %superq(text) ;
-      %else %put %syseval(putn(&n,Z5)) %superq(text) ;
+      %else %put %sysfunc(putn(&n,Z5)) %superq(text) ;
     %end;
 
 %*----------------------------------------------------------------------
 MODE=3 Return the line with optional end of line string.
 -----------------------------------------------------------------------;
-    %else %do;%superq(text)&eol.%end;
+    %else %do;
+      %*;&sep.%superq(text)
+      %let sep=%superq(eol);
+    %end;
 
   %end;
   %let rc = %sysfunc(fclose(&fid));
