@@ -54,68 +54,87 @@ History:
                   Replaced with QUOTE()/DEQUOTE() calls.
                   Added LINENO and EOL parameters.
 ----------------------------------------------------------------------*/
-%local filerc fileref n fid text rc j sep ;
-
-%*----------------------------------------------------------------------
-Assign fileref when physical file.
------------------------------------------------------------------------;
-%let filerc = 1;
-%let fileref = _fread;
-%if %sysfunc(fileexist(&file)) %then
-  %let filerc = %sysfunc(filename(fileref,&file))
-;
-%else %let fileref = &file;
+%local n filerc fileref fid text rc j sep ;
 
 %*----------------------------------------------------------------------
 Initialize line counter.
 -----------------------------------------------------------------------;
 %let n = 0;
 
+%if 0=%fileref(&file) %then %do;
+%*----------------------------------------------------------------------
+When FILE is an existing FILEREF then use it.
+-----------------------------------------------------------------------;
+  %let filerc = 1;
+  %let fileref=&file;
+%end;
+%else %if %sysfunc(fileexist(&file)) %then %do;
+%*----------------------------------------------------------------------
+Create new fileref for the existing file.
+-----------------------------------------------------------------------;
+  %let filerc = %sysfunc(filename(fileref,&file));
+%end;
+
+%if %length(&fileref) %then %do;
 %*----------------------------------------------------------------------
 Open file for streaming input access.
 -----------------------------------------------------------------------;
-%let fid = %sysfunc(fopen(&fileref,s));
+  %let fid = %sysfunc(fopen(&fileref,s));
 
-%if (&fid > 0) %then %do;
+  %if (&fid > 0) %then %do;
+
+%*----------------------------------------------------------------------
+Write a blank line before the output when MODE=2.
+-----------------------------------------------------------------------;
+    %if (&mode=2) %then %put %str( );
+
 %*----------------------------------------------------------------------
 Read through file and process each line.
 -----------------------------------------------------------------------;
-  %do %while(%sysfunc(fread(&fid)) = 0);
-    %let n = %eval(&n + 1);
-    %let rc = %sysfunc(fget(&fid,text,32767));
+    %do %while(%sysfunc(fread(&fid)) = 0);
+      %let n = %eval(&n + 1);
+      %let rc = %sysfunc(fget(&fid,text,32767));
 
-    %if (&mode = 1) %then %do;
+      %if (&mode = 1) %then %do;
 %*----------------------------------------------------------------------
 MODE=1 Store the quoted value into local macro variable.
 -----------------------------------------------------------------------;
-      %local w&n;
-      %let w&n = %sysfunc(quote(%superq(text),%str(%')));
-    %end;
+        %local w&n;
+        %let w&n = %sysfunc(quote(%superq(text),%str(%')));
+      %end;
 
-    %else %if (&mode = 2) %then %do;
+      %else %if (&mode = 2) %then %do;
 %*----------------------------------------------------------------------
 MODE=2 Write line to LOG with optional line numbers.
 -----------------------------------------------------------------------;
-      %if ^(&lineno) %then %put %superq(text) ;
-      %else %put %sysfunc(putn(&n,Z5)) %superq(text) ;
-    %end;
+        %if ^(&lineno) %then %put %superq(text) ;
+        %else %put %sysfunc(putn(&n,Z5)) %superq(text) ;
+      %end;
 
-    %else %do;
+      %else %do;
 %*----------------------------------------------------------------------
 MODE=3 Return the line with optional end of line string.
 -----------------------------------------------------------------------;
-      %*;&sep.%superq(text)
-      %let sep=%superq(eol);
+        %*;&sep.%superq(text)
+        %let sep=%superq(eol);
+      %end;
+
     %end;
 
+%*----------------------------------------------------------------------
+Write a blank line after the output when MODE=2.
+-----------------------------------------------------------------------;
+    %if (&mode=2) %then %put %str( );
+
+    %let rc = %sysfunc(fclose(&fid));
   %end;
-  %let rc = %sysfunc(fclose(&fid));
-%end;
 
 %*----------------------------------------------------------------------
 Clear fileref when assigned by macro,
 -----------------------------------------------------------------------;
-%if ^(&filerc) %then %let rc = %sysfunc(filename(fileref));
+  %if ^(&filerc) %then %let rc = %sysfunc(filename(fileref));
+
+%end;
 
 %if (&mode = 1) %then %do;
 %*----------------------------------------------------------------------
