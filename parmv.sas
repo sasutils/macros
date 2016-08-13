@@ -171,13 +171,6 @@ Bail out when no parameter validation is requested
 %if (&s_parmv = 0) %then %goto quit;
 
 %*----------------------------------------------------------------------
-When _val=0 1 change value to use in error message.
------------------------------------------------------------------------;
-%if (&_val = 0 1) %then
-  %let _val=%quote(0 (or OFF NO N FALSE F) 1 (or ON YES Y TRUE T))
-;
-
-%*----------------------------------------------------------------------
 Initialize to no errors seen.
 -----------------------------------------------------------------------;
 %let _error = 0;
@@ -278,7 +271,8 @@ Force parameter name to uppercase for clearer messages.
   %let _parm = %upcase(&_parm);
 
 %*----------------------------------------------------------------------
-Adjust message based on whether _FORCE was set or if _PARM is set.
+Call the parameter a macro variable when called from open code or when
+_FORCE was set.
 -----------------------------------------------------------------------;
   %if (&_force) | (1=%sysmexecdepth) %then %let _parmtyp=macro variable;
   %else %if (&_pl>-1) %then %let _parmtyp = parameter;
@@ -318,9 +312,11 @@ Write initial error message line.
     %put ERROR: The &_parm &_parmtyp does not exist.
   ;
 
-  %if (&_vl) %then
-    %put ERROR: Allowable values are: &_val..
-  ;
+  %if (&_vl) %then %do;
+    %if (&_val = 0 1) %then
+      %let _val=%quote(0 (or OFF NO N FALSE F) 1 (or ON YES Y TRUE T)) ;
+    %put ERROR: Allowable values are: &_val..;
+  %end;
 
   %if %length(&_msg) %then %let s_msg = &_msg;
   %else %let s_msg = Problem with%str( )%sysmexecname(%sysmexecdepth-1) &_parmtyp
