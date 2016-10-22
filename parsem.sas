@@ -3,16 +3,16 @@
 Macro tool for parsing a macro variable text string
 ----------------------------------------------------------------------*/
 (_str_      /* Text string */
-,word=      /* Macro variable to hold first (or last) word in _str_.
-               When not specified, macro call resolves to this word,
-               except when NWORDS=1. Defaults to W when strip=ALL. */
+,word=      /* Macro variable to hold first (or last) word in _str_. */
+            /* When not specified, macro call resolves to this word, */
+            /* except when NWORDS=1. Defaults to W when strip=ALL. */
 ,rest=      /* Macro variable to hold remainder of string. */
 ,strip=LAST /* Which word(s) to strip: LAST, FIRST, ALL */
 ,nstrip=1   /* Number of words to strip */
 ,delimit=   /* Delimiter character. Defaults to blank. */
-,nwords=0   /* Return number of words in string? 0=No,1=as value
-               returned by macro, OR macro variable holding the number
-               of words. Defautls to NWORDS when strip=ALL. */
+,nwords=0   /* Return number of words in string? 0=No,1=as value */
+            /* returned by macro, OR macro variable holding the number */
+            /* of words. Defaults to NWORDS when strip=ALL. */
 );
 
 /*----------------------------------------------------------------------
