@@ -9,10 +9,11 @@ Write SAS dataset as CSV file with headers using single data step
 ,label=0  /* Use LABEL instead of NAME for header row? */
 );
 /*----------------------------------------------------------------------
-Write a delimited file in a single DATA step
-using CALL VNEXT() method for adding the variable names.
+Write a delimited file in a single DATA step using CALL VNEXT() method 
+for adding the variable names. For a more complicated method with more
+options and parameter checking use the %CSVFILE() macro instead.
 
-Method posted originally by data_null_ in many places.
+This method was originally posted online by data_null_ in many places.
 For example look at this thread on SAS Communities
 https://communities.sas.com/t5/Base-SAS-Programming/Output-to-delimited-format/m-p/292767/highlight/true#M60829
 
