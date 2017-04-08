@@ -21,7 +21,7 @@ https://communities.sas.com/t5/Base-SAS-Programming/Output-to-delimited-format/m
 - To pass a different delimiter use a string literal. 
 - You can use hex literal for delimiter. '09'x is a TAB character.
 - To suppress header row use NAMES=0.
-- To use LABEL instead of NAME for column header use LABEL=1.
+- To use LABEL instead of NAME in header row use LABEL=1.
 
 Examples:
     data one;
