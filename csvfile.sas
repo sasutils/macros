@@ -1,12 +1,14 @@
 %macro csvfile
 /*----------------------------------------------------------------------
 Write SAS dataset as CSV file.
------------------------------------------------------------------------;
+----------------------------------------------------------------------*/
 (dataset     /* Dataset to write to CSV file. DSNoptions are allowed. */
 ,outfile=    /* Fileref or physical filename. (Def uses dataset name) */
 ,varlist=    /* Variable names to include. Variable lists are allowed */
 ,dlm=        /* Use single character, 2 digit hexcode, a keyword  */
              /* (SPACE COMMA TAB PIPE) or quoted string. (Def=comma) */
+,names=1     /* Include header row in output file? */
+,label=0     /* Use LABEL in place of NAME in header row? */
 );
 /*----------------------------------------------------------------------
 Write SAS dataset as CSV file.
@@ -43,7 +45,7 @@ Example:
   * Write selected variables to pipe delimited file. ;
   %csvfile(dlm=pipe,varlist=id diag1-diag5 proc1-proc5);
 
------------------------------------------------------------------------;
+----------------------------------------------------------------------*/
 %local previous parmerr rc addquote dsn dsnopts dlmq;
 %let parmerr=0;
 
@@ -143,9 +145,16 @@ When PROC TRANSPOSE has trouble then generate message and skip writing.
 *----------------------------------------------------------------------;
 data _null_;
   file &outfile dlm=&dlmq dsd lrecl=1000000 ;
+%if (&names) %then %do;
+  length _name_ _label_ $255 ;
+  array _ _name_ _label_;
   set &syslast end=eof;
+%if (&label) %then %do;
+  _name_ = coalescec(_label_,_name_);
+%end;
   put _name_ @;
   if eof then put;
+%end;
 run;
 
 *----------------------------------------------------------------------;
