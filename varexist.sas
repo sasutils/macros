@@ -9,6 +9,7 @@ Check for the existence of a specified variable.
            /* FMT = format of variable */
            /* INFMT = informat of variable */
            /* LABEL = label of variable */
+           /* NAME = name in case as stored in dataset */
            /* TYPE  = type of variable (N or C) */
 /* Default is to return the variable number  */
 );
