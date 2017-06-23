@@ -11,3 +11,4 @@ SAS Utility Macros
 * [fread](fread.sas) - Reads file using only macro code
 * [substrn](substrn.sas) - Subset string (simulation of SUBSTRN function)
 * [qsubstrn](qsubstrn.sas) - Subset string (simulation of SUBSTRN function) w quoting
+* [varexist](varexist.sas) - Check for the existence of a specified variable
