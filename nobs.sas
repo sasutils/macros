@@ -7,12 +7,8 @@ Return the number of observations in a dataset reference
             /* Set MVAR= to use NOBS as an in-line function. */
 );
 /*----------------------------------------------------------------------
-This code was developed by HOFFMAN CONSULTING as part of a FREEWARE
-macro tool set. Its use is restricted to current and former clients of
-HOFFMAN CONSULTING as well as other professional colleagues. Questions
-and suggestions may be sent to TRHoffman@sprynet.com.
------------------------------------------------------------------------
-Calls to: mvartest.sas sasname.sas
+This code is based on code developed by HOFFMAN CONSULTING as part of a 
+FREEWARE macro tool set. Thank you Tom Hoffman.
 -----------------------------------------------------------------------
 Usage:
 
