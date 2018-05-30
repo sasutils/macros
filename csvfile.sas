@@ -141,7 +141,7 @@ When PROC TRANSPOSE has trouble then generate message and skip writing.
 %end;
 %else %do;
 *----------------------------------------------------------------------;
-* Write header row ;
+* Initialize output file and optionally write header row ;
 *----------------------------------------------------------------------;
 data _null_;
   file &outfile dlm=&dlmq dsd lrecl=1000000 ;
