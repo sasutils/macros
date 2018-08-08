@@ -8,7 +8,7 @@ Generate data step to post content of dataset on SAS Communities
 ,file=log /* Fileref or quoted physical name of file to hold generated code */
 ,format=  /* Optional format list to use when generating data lines */
 );
-%local _error;
+%local _error noformats;
 %*---------------------------------------------------------------------------
 Check user parameters.
 ----------------------------------------------------------------------------;
@@ -120,15 +120,19 @@ run;
 *----------------------------------------------------------------------------;
 * Generate data lines ;
 *----------------------------------------------------------------------------;
+proc sql noprint;
+  select name into :noformats separated by ' '
+  from _contents_
+  where missing(informat)
+  ;
+quit;
 data _null_;
   file _code_ mod dsd dlm='|';
 %if (&obs ne MAX) %then %do;
   if _n_ > &obs then stop;
 %end;
   set &data ;
-%if %length(&format) %then %do;
-  format &format;
-%end;
+  format &format &noformats ;
   put (_all_) (+0) ;
 run;
 data _null_;
