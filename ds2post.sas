@@ -118,14 +118,16 @@ data _null_;
   end;
 run;
 *----------------------------------------------------------------------------;
-* Generate data lines ;
+* Generate list of variables that do not have attached informats. ;
 *----------------------------------------------------------------------------;
 proc sql noprint;
   select name into :noformats separated by ' '
-  from _contents_
-  where missing(informat)
+    from _contents_ where missing(informat)
   ;
 quit;
+*----------------------------------------------------------------------------;
+* Generate data lines ;
+*----------------------------------------------------------------------------;
 data _null_;
   file _code_ mod dsd dlm='|';
 %if (&obs ne MAX) %then %do;
