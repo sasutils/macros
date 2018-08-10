@@ -137,7 +137,7 @@ data _null_;
 %if %length(&noformats) %then %do;
   format &noformats ;
 %end;
-%if %length(&formats) %then %do;
+%if %length(&format) %then %do;
   format &format ;
 %end;
   put (_all_) (+0) ;
