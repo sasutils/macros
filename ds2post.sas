@@ -36,6 +36,9 @@ also include and informat on the INPUT statement.
 The data step will have INPUT, LENGTH, FORMAT, INFORMAT and LABEL statements
 (when needed) in that order.
 
+Numeric variables of length 2 (valid only on IBM Mainframes) will be made
+as length 3 instead.
+
 There are some limits on its ability to replicate exactly the data you have,
 mainly due to the use of delimited data.
 
@@ -83,9 +86,9 @@ Check user parameters.
   %end;
 %end;
 %if not %length(&file) %then %let file=log;
-%else %if %index(&file,%str(%'%")) or 0=%length(&file) or %length(&file)>8
-  %then %let file=%sysfunc(quote(%qsysfunc(dequote(&file)),%str(%')));
-%else %if %index(%qupcase( log _code_ print ),%qupcase( &file )) %then ;
+%else %if %sysfunc(indexc(&file,%str(%'%"))) or %length(&file)>8 %then
+   %let file=%sysfunc(quote(%qsysfunc(dequote(&file)),%str(%')));
+%else %if %sysfunc(indexw(log _code_ print,&file,%str( ))) %then ;
 %else %if %sysfunc(fileref(&file))<=0 %then ;
 %else %let file=%sysfunc(quote(&file,%str(%')));
 %if not %length(&obs) %then %let obs=20;
