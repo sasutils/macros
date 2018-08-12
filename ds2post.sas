@@ -10,10 +10,10 @@ Generate data step suitable for on-line posting to create an existing dataset
 /*----------------------------------------------------------------------------
 You can use this macro to create a data step for sharing an example of your
 existing data.  It will create a data step that will re-create the existing
-datasets variables (including order, type, length, format, informat and
-label) by reading from in-line delimited data lines.
+dataset variables formatting (including the order, type, length, format,
+informat and label) and data by reading from in-line delimited data lines.
 
-OBS=MAX will dump all of the data. Default is just first 20 observations.
+OBS=MAX will dump all of the data. Default is the first 20 observations.
 
 You can use the TARGET parameter to change the dataset name used in the
 generated code. By default it will create a work dataset with the same
@@ -22,22 +22,24 @@ member name as the input dataset.
 For the FILE parameter you can use either a fileref or a quoted physical
 filename.  Note that if you provide an unquoted value that is not a fileref
 then the macro will assume you meant to use that as the physical name of the
-file.  The macro creates a temporary file using the fileref of _CODE_. So if
-you call it with FILE=_CODE_ then it will just leave the generated program in
-that temporary file.
-
-To insure that data does transfer in spite of the potential of variables
-with mismatched FORMAT and INFORMAT in the source dataset the values will
-be written using raw data format.  So in the generated INPUT statement all
-character variables will use $ informat (set their length) and any numeric
-format that has something other than the default informat attached to it will
-also include and informat on the INPUT statement.
+file.  The macro uses the fileref of _CODE_ for the temporary file it uses
+to generate the code into. So if you call it with FILE=_CODE_ it will leave
+the generated program in that temporary file.
 
 The data step will have INPUT, LENGTH, FORMAT, INFORMAT and LABEL statements
 (when needed) in that order.
 
-Numeric variables of length 2 (valid only on IBM Mainframes) will be made
-as length 3 instead.
+To insure that data transfers correctly in spite of the potential of variables
+with mismatched FORMAT and INFORMAT in the source dataset the values will be
+written using raw data format.  In the generated INPUT statement all
+character variables will use $ informat (setting their length) and any numeric
+format that uses an informat other the default informat will include :F.
+informat in the INPUT statement.
+
+A LENGTH statement will only be generated for numeric variables with length
+less than 8. Numeric variables of length 2 (valid only on IBM Mainframes) will
+be set to length 3 instead. The length of characters variables will be set by
+the informat used in the INPUT statement.
 
 There are some limits on its ability to replicate exactly the data you have,
 mainly due to the use of delimited data.
