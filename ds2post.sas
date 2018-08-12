@@ -136,7 +136,7 @@ proc sql noprint;
   select cats('(label=',quote(trim(memlabel),"'"),')')
     into :memlabel trimmed
     from dictionary.tables
-    where memname="&memname" and not missing(memlabel)
+    where libname="&libname" and memname="&memname" and not missing(memlabel)
   ;
   create table _ds2post_ as
     select varnum
