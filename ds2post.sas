@@ -1,32 +1,93 @@
 %macro ds2post
 /*----------------------------------------------------------------------------
-Generate data step to post content of dataset on SAS Communities
+Generate data step suitable for on-line posting to create an existing dataset
 ----------------------------------------------------------------------------*/
-(data     /* Name of dataset to post *REQ*  */
-,target=  /* Name to use in generated data step. (default is memname of &DATA) */
-,obs=20   /* Number of observations to generate */
-,file=log /* Fileref or quoted physical name of file to hold generated code */
-,format=  /* Optional format list to use when generating data lines */
+(data   /* Name of input (def=&syslast Use data=-help to see syntax in log)*/
+,file   /* Fileref or quoted physical name of where to write code (def=LOG) */
+,obs    /* Number of observations to include. Use obs=max for all (def=20) */
+,target /* Dataset name to create. (def=memname of input dataset) */
 );
-%local _error noformats;
+/*----------------------------------------------------------------------------
+You can use this macro to create a data step for sharing an example of your
+existing data.  It will create a data step that will re-create the existing
+datasets variables (including order, type, length, format, informat and
+label) by reading from in-line delimited data lines.
+
+OBS=MAX will dump all of the data. Default is just first 20 observations.
+
+You can use the TARGET parameter to change the dataset name used in the
+generated code. By default it will create a work dataset with the same
+member name as the input dataset.
+
+For the FILE parameter you can use either a fileref or a quoted physical
+filename.  Note that if you provide an unquoted value that is not a fileref
+then the macro will assume you meant to use that as the physical name of the
+file.  The macro creates a temporary file using the fileref of _CODE_. So if
+you call it with FILE=_CODE_ then it will just leave the generated program in
+that temporary file.
+
+To insure that data does transfer in spite of the potential of variables
+with mismatched FORMAT and INFORMAT in the source dataset the values will
+be written using raw data format.  So in the generated INPUT statement all
+character variables will use $ informat (set their length) and any numeric
+format that has something other than the default informat attached to it will
+also include and informat on the INPUT statement.
+
+The data step will have INPUT, LENGTH, FORMAT, INFORMAT and LABEL statements
+(when needed) in that order.
+
+There are some limits on its ability to replicate exactly the data you have,
+mainly due to the use of delimited data.
+
+- Leading spaces on character variables are not preserved.
+- Embedded CR or LF in character variables will cause problems.
+- There could be slight (E-14) rounding of floating point numbers
+
+Also in-line data is not that suitable for really long data lines. In that
+case you could get better results by copying the data lines to a separate
+file and modifing the data step to read from that file instead of in-line
+data.
+------------------------------------------------------------------------------
+Examples:
+* Dump code to the SAS log ;
+%ds2post(sashelp.class)
+
+* Dump code to the results window ;
+%ds2post(sashelp.class,file=print)
+
+* Dump complete dataset to an external file ;
+%ds2post(mydata,obs=max,file="mydata.sas")
+
+----------------------------------------------------------------------------*/
+%local _error ll libname memname memlabel;
+%*---------------------------------------------------------------------------
+Set maximum line length to use for wrapping the generated SAS statements.
+----------------------------------------------------------------------------;
+%let ll=72 ;
+
 %*---------------------------------------------------------------------------
 Check user parameters.
 ----------------------------------------------------------------------------;
 %let _error=0;
-%if "%upcase(%qsubstr(&data,1,2))" = "-H" %then %let _error=1;
-%else %if %length(&data) %then %do;
-  %if not (%sysfunc(exist(%qscan(&data,1,())))
-        or %sysfunc(exist(%qscan(&data,1,()),view))) %then %do;
+%if "%upcase(%qsubstr(&data.xx,1,2))" = "-H" %then %let _error=1;
+%else %do;
+  %if not %length(&data) %then %let data=&syslast;
+  %if not (%sysfunc(exist(&data)) or %sysfunc(exist(&data,view))) %then %do;
     %let _error = 1;
     %put ERROR: "&data" is not a valid value for the DATA parameter.;
     %put ERROR: Unable to find the dataset. ;
   %end;
+  %else %do;
+    %let memname=%upcase(%scan(&data,-1,.));
+    %let libname=%upcase(%scan(work.&data,-2,.));
+  %end;
 %end;
-%else %do;
-  %let _error = 1;
-  %put ERROR: The DATA parameter is required.;
-%end;
-%if not %length(&target) %then %let target=%qscan(%qscan(&data,1,()),-1,.);
+%if not %length(&file) %then %let file=log;
+%else %if %index(&file,%str(%'%")) or 0=%length(&file) or %length(&file)>8
+  %then %let file=%sysfunc(quote(%qsysfunc(dequote(&file)),%str(%')));
+%else %if %index(%qupcase( log _code_ print ),%qupcase( &file )) %then ;
+%else %if %sysfunc(fileref(&file))<=0 %then ;
+%else %let file=%sysfunc(quote(&file,%str(%')));
 %if not %length(&obs) %then %let obs=20;
 %else %let obs=%upcase(&obs);
 %if "&obs" ne "MAX" %then %if %sysfunc(verify(&obs,0123456789)) %then %do;
@@ -34,7 +95,7 @@ Check user parameters.
   %put ERROR: "&obs" is not a valid value for the OBS parameter.;
   %put ERROR: Valid values are MAX or non-negative integer. ;
 %end;
-%if not %length(&file) %then %let file=log;
+%if not %length(&target) %then %let target=work.%qscan(&data,-1,.);
 
 %if (&_error) %then %do;
 *----------------------------------------------------------------------------;
@@ -46,17 +107,16 @@ data _null_;
 //'SAS macro to copy data into a SAS Data Step in a '
   'form which you can post to on-line forums.'
 //'Syntax:'
-/ ' %ds2post(data=,target=,obs=,format=,file=)'
+/ ' %ds2post(data,file,target,obs)'
 //' data   = Name of SAS dataset (or view) that you want to output.'
-//' target = Name to use for generated dataset.'
-  ' Default is to use name of the input.'
-//' obs    = Number of observations to output. Use MAX to copy complete dataset.'
-  ' Default is 20.'
+  ' Default is last created dataset.' ' Use data=-help to print instructions.'
 //' file   = Fileref or quoted physical filename for code.'
-  ' Default is the SAS log.'
-//' format = Optional list of <var_list> <format spec> pairs to use when writing'
-  ' data lines.' ' Setting format=_all_ will clear all formats so raw data'
-  ' values are written.'
+  ' Default of file=log will print code to the SAS log.'
+  ' file=print will print code to results.'
+//' target = Name to use for generated dataset.'
+  ' Default is to make work dataset using the name of the input.'
+//' obs    = Number of observations to output. Default obs=20.'
+  ' Use obs=MAX to copy complete dataset.'
 //'Note that this macro will NOT work well for really long data lines.'
  /'If your data has really long variables or a lot of variables then consider'
   ' splitting your dataset in order to post it.'
@@ -65,66 +125,67 @@ run;
 %end;
 %else %do;
 *----------------------------------------------------------------------------;
-* Get contents information and sort by VARNUM ;
+* Get member label in format of dataset option. ;
+* Get dataset contents information in a format to facilitate code generation.;
+* Column names reflect data statement that uses the value. ;
 *----------------------------------------------------------------------------;
-proc contents noprint data=&data
-  out=_contents_(keep=name varnum type length format: inform: memlabel label)
-;
-run;
-proc sort data=_contents_ ;
-  by varnum;
-run;
+proc sql noprint;
+  select cats('(label=',quote(trim(memlabel),"'"),')')
+    into :memlabel trimmed
+    from dictionary.tables
+    where memname="&memname" and not missing(memlabel)
+  ;
+  create table _ds2post_ as
+    select varnum
+         , nliteral(name) as name length=50
+         , substrn(informat,1,findc(informat,' .',-49,'kd')) as inf length=49
+         , case when type='char' then cats(':$',length,'.')
+                when not (lowcase(calculated inf) in ('best','f',' ')
+                     and scan(informat,2,'.') = ' ') then ':F.'
+           else ' ' end as input length=8
+         , case when type='num' and length < 8 then cats(max(3,length))
+           else ' ' end as length length=1
+         , lowcase(format) as format length=49
+         , lowcase(informat) as informat length=49
+         , case when missing(label) then ' ' else quote(trim(label),"'")
+           end as label length=300
+    from dictionary.columns
+    where libname="&libname" and memname="&memname"
+    order by varnum
+  ;
+quit;
 *----------------------------------------------------------------------------;
-* Generate top of data step ;
+* Generate data step code ;
 *----------------------------------------------------------------------------;
 filename _code_ temp;
 data _null_;
-  length firstvar name $60 string $300 ;
-  retain firstvar ;
   file _code_ column=cc ;
-  set _contents_ end=eof ;
-  if _n_=1 then do;
-    put "data &target" @;
-    if not missing(memlabel) then do;
-      string=quote(trim(memlabel),"'");
-      put '(label=' string ')' @;
+  set _ds2post_ (obs=1) ;
+  put "data &target &memlabel;" ;
+  put @3 "infile datalines dsd dlm='|' truncover;" ;
+  length statement $32 string $351 ;
+  do statement='input','length','format','informat','label';
+    call missing(any,anysplit);
+    put @3 statement @ ;
+    do p=1 to nobs ;
+      set _ds2post_ point=p nobs=nobs ;
+      string=vvaluex(statement);
+      if statement='input' or not missing(string) then do;
+        any=1;
+        string=catx(ifc(statement='label','=',' '),name,string);
+        if &ll<(cc+length(string)) then do;
+          anysplit=1;
+          put / @5 @ ;
+        end;
+        put string @ ;
+      end;
     end;
-    put ';';
+    if anysplit then put / @3 @ ;
+    if not any then put @1 10*' ' @1 @ ;
+    else put ';' ;
   end;
-  name=nliteral(name) ;
-  if _n_=1 then firstvar=name;
-  string=cats(ifc(type=2,'$',' '),length);
-  put '  attrib ' name 'length=' string @;
-  if formatl or not missing(format) then do;
-     string=cats(format,ifc(formatl,cats(formatl),''),'.',ifc(formatd,cats(formatd),''));
-     put 'format=' string @ ;
-  end;
-  if informl or not missing(informat) then do;
-     string=cats(informat,ifc(informl,cats(informl),''),'.',ifc(informd,cats(informd),''));
-     if cc+9+length(string)>80 then put / @4 @ ;
-     put 'informat=' string @ ;
-  end;
-  if not missing(label) then do;
-     string=quote(trim(label),"'");
-     if cc+7>80 then put / @4 'label=' string @ ;
-     else if cc+7+length(string)>80 then put 'label=' / @4 string @ ;
-     else  put 'label=' string @;
-  end;
-  put ';' ;
-  if eof then do;
-     put "  infile datalines dsd dlm='|' truncover;" ;
-     put '  input ' firstvar '-- ' name ';';
-     put 'datalines4;' ;
-  end;
+  put 'datalines4;' ;
 run;
-*----------------------------------------------------------------------------;
-* Generate list of variables that do not have attached informats. ;
-*----------------------------------------------------------------------------;
-proc sql noprint;
-  select name into :noformats separated by ' '
-    from _contents_ where missing(informat)
-  ;
-quit;
 *----------------------------------------------------------------------------;
 * Generate data lines ;
 *----------------------------------------------------------------------------;
@@ -134,21 +195,16 @@ data _null_;
   if _n_ > &obs then stop;
 %end;
   set &data ;
-%if %length(&noformats) %then %do;
-  format &noformats ;
-%end;
-%if %length(&format) %then %do;
-  format &format ;
-%end;
+  format _numeric_ best32. _character_ ;
   put (_all_) (+0) ;
 run;
 data _null_;
   file _code_ mod ;
   put ';;;;';
 run;
-  %if "%qupcase(&file)" ne "_CODE_" %then %do;
+%if "%qupcase(&file)" ne "_CODE_" %then %do;
 *----------------------------------------------------------------------------;
-* Copy generated code to target file name ;
+* Copy generated code to target file name and remove temporary file. ;
 *----------------------------------------------------------------------------;
 data _null_ ;
   infile _code_;
@@ -156,6 +212,12 @@ data _null_ ;
   input;
   put _infile_;
 run;
-  %end;
+filename _code_ ;
+%end;
+*----------------------------------------------------------------------------;
+* Remove generated metadata. ;
+*----------------------------------------------------------------------------;
+proc delete data=_ds2post_;
+run;
 %end;
 %mend ds2post ;
