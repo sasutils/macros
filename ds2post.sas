@@ -106,23 +106,20 @@ Check user parameters.
 *----------------------------------------------------------------------------;
 data _null_;
   put
-  '%DS2POST'
-//'SAS macro to copy data into a SAS Data Step in a '
+  '%DS2POST' ' - SAS macro to copy data into a SAS Data Step in a '
   'form which you can post to on-line forums.'
-//'Syntax:'
-/ ' %ds2post(data,file,target,obs)'
+//'Syntax:' ' %ds2post(data,file,obs,target)'
 //' data   = Name of SAS dataset (or view) that you want to output.'
   ' Default is last created dataset.' ' Use data=-help to print instructions.'
 //' file   = Fileref or quoted physical filename for code.'
   ' Default of file=log will print code to the SAS log.'
   ' file=print will print code to results.'
-//' target = Name to use for generated dataset.'
-  ' Default is to make work dataset using the name of the input.'
 //' obs    = Number of observations to output. Default obs=20.'
   ' Use obs=MAX to copy complete dataset.'
-//'Note that this macro will NOT work well for really long data lines.'
- /'If your data has really long variables or a lot of variables then consider'
-  ' splitting your dataset in order to post it.'
+//' target = Name to use for generated dataset.'
+  ' Default is to make work dataset using the name of the input.'
+//'For more information see source code available on github at '
+ /'https://raw.githubusercontent.com/sasutils/macros/master/ds2post.sas'
   ;
 run;
 %end;
