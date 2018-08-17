@@ -15,7 +15,7 @@ options and parameter checking use the %CSVFILE() macro instead.
 
 This method was originally posted online by data_null_ in many places.
 For example look at this thread on SAS Communities
-https://communities.sas.com/t5/Base-SAS-Programming/Output-to-delimited-format/m-p/292767/highlight/true#M60829
+https://communities.sas.com/t5/Base-SAS-Programming/Output-to-delimited-format/m-p/292767#M60829
 
 - To pass a physical name for a file enclose it in quotes.
 - To pass a different delimiter use a string literal. 
