@@ -54,7 +54,11 @@ file and modifing the data step to read from that file instead of in-line
 data.
 ------------------------------------------------------------------------------
 Examples:
-* Dump code to the SAS log ;
+* Pull macro definition from GITHUB and dump code to the SAS log ;
+filename ds2post url
+  'https://raw.githubusercontent.com/sasutils/macros/master/ds2post.sas'
+;
+%include ds2post ;
 %ds2post(sashelp.class)
 
 * Dump code to the results window ;
