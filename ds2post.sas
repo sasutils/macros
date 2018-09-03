@@ -90,7 +90,7 @@ Check user parameters.
 %if not %length(&file) %then %let file=log;
 %else %if %sysfunc(indexc(&file,%str(%'%"))) or %length(&file)>8 %then
    %let file=%sysfunc(quote(%qsysfunc(dequote(&file)),%str(%')));
-%else %if %sysfunc(indexw(log _code_ print,&file,%str( ))) %then ;
+%else %if %sysfunc(indexw(LOG _CODE_ PRINT,%upcase(&file),%str( ))) %then ;
 %else %if %sysfunc(fileref(&file))<=0 %then ;
 %else %let file=%sysfunc(quote(&file,%str(%')));
 %if not %length(&obs) %then %let obs=20;
