@@ -143,8 +143,8 @@ proc sql noprint;
   ;
   create table _ds2post_ as
     select varnum
-         , nliteral(name) as name length=50
-         , substrn(informat,1,findc(informat,' .',-49,'kd')) as inf length=49
+         , nliteral(name) as name length=66
+         , substrn(informat,1,findc(informat,' .',-49,'kd')) as inf length=32
          , case when type='char' then cats(':$',length,'.')
                 when not (lowcase(calculated inf) in ('best','f',' ')
                      and scan(informat,2,'.') = ' ') then ':F.'
