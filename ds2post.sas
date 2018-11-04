@@ -174,7 +174,7 @@ data _null_;
   set _ds2post_ (obs=1) ;
   put "data &target &memlabel;" ;
   put @3 "infile datalines dsd dlm='|' truncover;" ;
-  length statement $32 string $351 ;
+  length statement $10 string $370 ;
   do statement='input','length','format','informat','label';
     call missing(any,anysplit);
     put @3 statement @ ;
