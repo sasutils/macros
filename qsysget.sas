@@ -12,7 +12,7 @@ cause issues when the value of the environment variable contains
 special characters like:  & % ; 
 
 This macro uses the %QSYSFUNC() macro function to call the regular
-SAS function SYSGET() instead to get macro quoting applied.
+SAS function SYSGET() instead so macro quoting is applied.
 
 The SYSRC global macro variable is set to indicate whether the 
 environment variable was found. 
