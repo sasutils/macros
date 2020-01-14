@@ -8,14 +8,14 @@ Get macro quoted value of enviroment variable
 Returns the macro quoted value of the named environment variable.
 
 The macro function %SYSGET() does not mask macro triggers. This can 
-cause issues when the value of the macro variable contains special 
-characters like:  & % ; 
+cause issues when the value of the environment variable contains 
+special characters like:  & % ; 
 
-So this macro uses the %QSYSFUNC() macro function to call the regular
-SAS function SYSGET() instead so that macro quoting is applied.
+This macro uses the %QSYSFUNC() macro function to call the regular
+SAS function SYSGET() instead to get macro quoting applied.
 
-SYSRC global macro variable has status of whether the environment 
-variable was found or not. 
+The SYSRC global macro variable is set to indicate whether the 
+environment variable was found. 
   1 = Environment variable not found. 
   0 = Environment variable found.
 ----------------------------------------------------------------------*/
