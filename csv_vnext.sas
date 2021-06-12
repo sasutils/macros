@@ -7,6 +7,7 @@ Write SAS dataset as CSV file with headers using single data step
 ,dlm=',' /* Delimiter character as literal value */
 ,names=1  /* Write header row? */
 ,label=0  /* Use LABEL instead of NAME for header row? */
+,format=  /* Allow overrides of formats */
 );
 /*----------------------------------------------------------------------
 Write a delimited file in a single DATA step using CALL VNEXT() method 
@@ -20,17 +21,19 @@ https://communities.sas.com/t5/Base-SAS-Programming/Output-to-delimited-format/m
 - You can use hex literal for delimiter. '09'x is a TAB character.
 - To suppress header row use NAMES=0.
 - To use LABEL instead of NAME in header row use LABEL=1.
+- Do not include the FORMAT keyword in the FORMAT= option.
 Examples:
     data one;
       set sashelp.shoes(obs=5);
     run;
     %csv_vnext(outfile=log ls=132,label=1,dlm='^');
-    %csv_vnext(outfile=log ls=132,names=0)
+    %csv_vnext(outfile=log ls=132,names=0,format=)
     filename csv temp;
     %csv_vnext(dsn=sashelp.shoes(obs=5));
 ----------------------------------------------------------------------*/
 data _null_;
   set &dsn;
+  format &format;
   file &outfile dsd dlm=&dlm;
 %if (&names) %then %do;
   if _n_ eq 1 then link names;
