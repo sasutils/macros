@@ -40,6 +40,8 @@ parameter to insert a delimiter string between the lines.
 Note files larger than macro variable limit (64K bytes) will not work
 with MODE=1 or MODE=3.
 
+Note: This macro requires %FILEREF() macro.
+
 -----------------------------------------------------------------------
 This macro was adopted from code developed by Tom Hoffman.
 
