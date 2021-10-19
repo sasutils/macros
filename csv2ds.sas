@@ -101,13 +101,8 @@ filename csv "myfile.csv";
 -----------------------------------------------------------------------
 Modification History
 -----------------------------------------------------------------------
-Revision n.x  yyyy/mm/dd hh:mm:ss  username
-$Log: csv2ds.sas,v $
-Revision 1.2  2021/10/13 18:45:24  abernt
-Enhance name generation and guessingrows feature
-
-Revision 1.1  2021/10/13 13:50:00  abernt
-Initial revision
+Revision n.x  yyyy/mm/dd username
+Revision 1.1  2021/10/19 sasutil   Initial revision
 
 ----------------------------------------------------------------------*/
 %local macro parmerr file fileopt found optsave misssave nameobs dataobs;
