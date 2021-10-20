@@ -101,12 +101,13 @@ filename csv "myfile.csv";
 -----------------------------------------------------------------------
 Modification History
 -----------------------------------------------------------------------
-Revision n.x  yyyy/mm/dd username
-Revision 1.1  2021/10/19 sasutil   Initial revision
+Revision n.x  yyyy/mm/dd hh:mm:ss  username
+Revision 1.1  2021/10/13 13:50:00  abernt   Initial revision
 
 ----------------------------------------------------------------------*/
-%local macro parmerr file fileopt found optsave misssave nameobs dataobs;
+%local macro parmerr dt file fileopt rc optsave misssave nameobs dataobs;
 %let macro=CSV2DS;
+%let dt=%sysfunc(datetime());
 
 %*----------------------------------------------------------------------------
 Validate parameters
@@ -115,15 +116,15 @@ Validate parameters
 %else %do;
   %let file=%qscan(&filen,1,%str( ),q);
   %let fileopt=%substr(&filen%str( ),%length(&file)+1);
-  %let found=1;
+  %let rc=1;
   %if %length(&file)<=8 %then %if %sysfunc(nvalid(&file)) %then %do;
-    %let found=%sysfunc(fileref(&file));
-    %if &found<=0 %then %let file=%upcase(&file);
-    %if &found<0 %then %parmv(FILEN,_msg=
+    %let rc=%sysfunc(fileref(&file));
+    %if &rc<=0 %then %let file=%upcase(&file);
+    %if &rc<0 %then %parmv(FILEN,_msg=
        File pointed to by fileref &file not found)
     ;
   %end;
-  %if &found>0 %then %if %sysfunc(fileexist(&file)) %then
+  %if &rc>0 %then %if %sysfunc(fileexist(&file)) %then
     %let file=%sysfunc(quote(%qsysfunc(dequote(&file)),%str(%')))
   ;
   %else %parmv(FILEN,_msg=File not found);
@@ -388,14 +389,19 @@ data _types_;
 %if %sysfunc(getoption(validvarname)) eq UPCASE %then %do;
   name=upcase;
 %end;
-  do suffix=0 by 1 while( h.add() );
+  do suffix=0 to 1E4 while( h.add()
+     or not h.check(key:substrn(catx('_',upcase,suffix),1,32),key:0))
+  ;
      upcase=substr(upcase,1,32-length(cats(suffix))-1);
   end;
   if suffix then substr(name,lengthn(upcase)+1)=cats('_',suffix);
   if name=label then label=' ';
   if maxlength > &maxchar and type='char' then do;
-    put 'WARNING: Values of ' varnum= name=:$quote. 'might be truncated. ' maxlength=:comma20. ;
     length="$&maxchar";
+    put 'WARNING: Column ' varnum +(-1) ', ' name :$quote. ', might be truncated. '
+        'Setting length to ' length 'but longest value seen was '
+        maxlength :comma20. 'bytes long.'
+    ;
   end;
   drop upcase suffix ;
 run;
@@ -469,6 +475,9 @@ run;
   options &optsave;
 %end;
 %else %do;
+*----------------------------------------------------------------------------;
+* Show the generated data step code in the log ;
+*----------------------------------------------------------------------------;
   data _null_;
     infile _code_;
     input;
@@ -480,5 +489,13 @@ run;
 * Reset MISSING statement settings;
 *----------------------------------------------------------------------------;
 missing &misssave;
+
 %quit:
+%*----------------------------------------------------------------------------
+Report on time spent in macro
+-----------------------------------------------------------------------------;
+%let dt=%sysevalf(%sysfunc(datetime())-&dt);
+%if &dt < 60 %then %let dt=%sysfunc(putn(&dt,best32.)) seconds;
+%else %let dt=%sysfunc(putn(&dt,time14.3));
+%put NOTE: Macro &macro used &dt..;
 %mend csv2ds;
