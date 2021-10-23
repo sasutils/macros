@@ -56,8 +56,8 @@ Examples:
 data _null_;
   set &dsn;
   format &format;
-%* Use an unusual name to minimize the odds of a name conflict ;
-  length __0_value_0__ $32767;
+%* Use an unusual names to minimize the odds of a name conflict ;
+  length __0_name_0__ $32 __0_value_0__ $32767;
   file &outfile dsd dlm=&dlm
 %if %qupcase(&outfile) ne LOG %then termstr=crlf;
   ;
@@ -65,9 +65,9 @@ data _null_;
   if _n_ eq 1 then link names;
 %end;
   do while(1);
-    call vnext(__0_value_0__);
-    if lowcase(__0_value_0__) = '__0_value_0__' then leave;
-    __0_value_0__ = vvaluex(__0_value_0__);
+    call vnext(__0_name_0__);
+    if lowcase(__0_name_0__) = '__0_name_0__' then leave;
+    __0_value_0__ = vvaluex(__0_name_0__);
     link write;
   end;
   put;
@@ -79,7 +79,7 @@ return;
 names:
   do while(1);
     call vnext(__0_value_0__);
-    if lowcase(__0_value_0__) = '__0_value_0__' then leave;
+    if lowcase(__0_value_0__) = '__0_name_0__' then leave;
   %if (&label) %then %do;
     __0_value_0__ = vlabelx(__0_value_0__);
   %end;
