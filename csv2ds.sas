@@ -393,7 +393,7 @@ data _types_;
   name=upcase;
 %end;
   do suffix=0 to 1E4 while( h.add()
-     or not h.check(key:substrn(catx('_',upcase,suffix),1,32),key:0))
+     or (suffix and not h.check(key:substrn(catx('_',upcase,suffix),1,32),key:0)))
   ;
      upcase=substr(upcase,1,32-length(cats(suffix))-1);
   end;
@@ -498,7 +498,7 @@ missing &misssave;
 Report on time spent in macro
 -----------------------------------------------------------------------------;
 %let dt=%sysevalf(%sysfunc(datetime())-&dt);
-%if &dt < 60 %then %let dt=%sysfunc(putn(&dt,best32.)) seconds;
+%if &dt < 60 %then %let dt=&dt seconds;
 %else %let dt=%sysfunc(putn(&dt,time14.3));
-%put NOTE: Macro &macro used &dt..;
+%put NOTE: &macro used (Total process time): &dt.;
 %mend csv2ds;
