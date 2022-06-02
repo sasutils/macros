@@ -15,17 +15,12 @@ To treat the graph as undirected set the DIRECTED parameter to 0.
 ----------------------------------------------------------------------*/
 %local subnetid next getnext ;
 %*----------------------------------------------------------------------
-Put code to get next unassigned node into a macro variable. This query 
-is used in two places in the program.
------------------------------------------------------------------------;
-%let getnext= select node into :next from nodes where subnet=.;
-%*----------------------------------------------------------------------
 Initialize subnet id counter.
 -----------------------------------------------------------------------;
 %let subnetid=0;
 proc sql noprint;
 *----------------------------------------------------------------------;
-* Get list of all nodes ;
+* Create list of all nodes ;
 *----------------------------------------------------------------------;
   create table nodes as
     select . as subnet, &from as node from &in where &from is not null
@@ -33,10 +28,24 @@ proc sql noprint;
     select . as subnet, &to as node from &in where &to is not null
   ;
 *----------------------------------------------------------------------;
+* Generate query to get next unassigned node into a macro variable. ;
+*----------------------------------------------------------------------;
+%*----------------------------------------------------------------------
+Query is modified based on type of variable used for node.  This query 
+is put into a macro variable so it can be used twice in the program.
+-----------------------------------------------------------------------;
+  select catx(' ','select ',case when type='num' then 'node'
+               else 'quote(trim(node),"''")' end
+             ,'into :next from nodes where subnet=.')
+    into :getnext 
+    from dictionary.columns
+    where libname='WORK' and memname='NODES' and upcase(name)='NODE'
+  ;
+*----------------------------------------------------------------------;
 * Get next unassigned node ;
 *----------------------------------------------------------------------;
   &getnext;
-%do %while (&sqlobs) ;
+%do %while (&sqlobs and not &sqlrc) ;
 *----------------------------------------------------------------------;
 * Set subnet to next id ;
 *----------------------------------------------------------------------;
