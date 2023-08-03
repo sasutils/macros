@@ -4,8 +4,7 @@ Check for the existence of a specified variable.
 ----------------------------------------------------------------------*/
 (ds        /* Data set name */
 ,var       /* Variable name */
-,info      /* NUM = variable number */
-           /* LEN = length of variable */
+,info      /* LEN = length of variable */
            /* FMT = format of variable */
            /* INFMT = informat of variable */
            /* LABEL = label of variable */
