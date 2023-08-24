@@ -397,7 +397,8 @@ data _types_;
   ;
      upcase=substr(upcase,1,32-length(cats(suffix))-1);
   end;
-  if suffix then substr(name,lengthn(upcase)+1)=cats('_',suffix);
+  if suffix then name=cats(substr(upcase,1,32-length(cats(suffix))-1),'_',suffix);
+
   if name=label then label=' ';
   if maxlength > &maxchar and type='char' then do;
     length="$&maxchar";
