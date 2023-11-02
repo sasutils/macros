@@ -29,7 +29,7 @@ FILEREF too long.
 %*----------------------------------------------------------------------------
 FILEREF not a valid SAS name.
 -----------------------------------------------------------------------------;
-%else %if 0 = %sysfunc(nvalid(&fileref)) %then 1;
+%else %if 0 = %sysfunc(nvalid(&fileref,v7)) %then 1;
 
 %*----------------------------------------------------------------------------
 Return result of the FILEREF() function.
