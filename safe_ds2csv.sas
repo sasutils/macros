@@ -10,13 +10,14 @@ Write SAS dataset as CSV file insuring proper quoting
 ,names=1  /* Write header row? (0/1)  */
 ,label=0  /* Use LABEL instead of NAME for header row? (0/1) */
 ,format=  /* Optional format overrides. */
+,maxchar=300 /* Optional max length for any formatted value max=32767 */
 );
 /*----------------------------------------------------------------------
 Write dataset to a delimited file that SAS should be able to read back.
 
 All lines will end with the Windows/DOS standard CR+LF sequence so that
 SAS can read values that have embedded CR or LF characters. Any CR+LF
-two byte sequences in the data will be writtne as just a CR.
+two byte sequences in the data will be written as just a CR.
 
 Also to prevent SAS from getting confused by single quote values in two
 different fields on the same line from looking like one long quoted
@@ -25,6 +26,9 @@ string any value with a single quote will be quoted in the output file.
 Uses the CALL VNEXT() idea originally posted online by data_null_ in
 many places.  For example look at this thread on SAS Communities
 https://communities.sas.com/t5/Base-SAS-Programming/Output-to-delimited-format/m-p/292767#M60829
+
+To avoid any name conflicts uses temporary arrays named _CHAR_ and
+_CHARACTER_ which SAS allows as array names but not as variable names.
 
 Notes:
 - To pass a physical name for a file enclose it in quotes.
@@ -38,6 +42,10 @@ Notes:
 - Use the TERMSTR=CRLF option when reading the resulting file to make
   sure that embedded CR or LF characters will not cause the input to
   get confused.
+- Set MAXCHAR long enough for the largest value of any variable.  Note
+  that you will get improved performance by using a smaller value for MAXCHAR
+  since the perfomance of string operations is much worse for long
+  strings.
 
 Examples:
 * Create CSV file ;
@@ -50,55 +58,57 @@ Examples:
   run;
 
 ----------------------------------------------------------------------*/
+%local optsave;
+%let optsave="%qsysfunc(getoption(missing))";
+options missing=' ';
 *----------------------------------------------------------------------------;
 * Write data values to delimited text file using PUT statements. ;
 *----------------------------------------------------------------------------;
 data _null_;
   set &dsn;
   format &format;
-%* Use an unusual names to minimize the odds of a name conflict ;
-  length __0_name_0__ $32 __0_value_0__ $32767;
+  array _char_(1) $32 _temporary_;
+  array _character_(1) $&maxchar. _temporary_;
   file &outfile dsd dlm=&dlm
 %if %qupcase(&outfile) ne LOG %then termstr=crlf;
   ;
 %if (&names) %then %do;
-  if _n_ eq 1 then link names;
-%end;
-  do while(1);
-    call vnext(__0_name_0__);
-    if lowcase(__0_name_0__) = '__0_name_0__' then leave;
-    __0_value_0__ = vvaluex(__0_name_0__);
-    link write;
-  end;
-  put;
-return;
-%if (&names) %then %do;
 *----------------------------------------------------------------------------;
 * Write the header row ;
 *----------------------------------------------------------------------------;
-names:
+  if _n_ eq 1 then do;
+    do while(1);
+      call vnext(_char_(1));
+      if _char_(1) = '_ERROR_' then leave;
+      _character_(1) =
+  %if (&label) %then vlabelx(_char_(1));
+  %else _char_(1);
+      ;
+      link write;
+    end;
+    put;
+  end;
+%end;
+  _char_(1)=' ';
   do while(1);
-    call vnext(__0_value_0__);
-    if lowcase(__0_value_0__) = '__0_name_0__' then leave;
-  %if (&label) %then %do;
-    __0_value_0__ = vlabelx(__0_value_0__);
-  %end;
+    call vnext(_char_(1));
+    if _char_(1) = '_ERROR_' then leave;
+    _character_(1) = vvaluex(_char_(1));
     link write;
   end;
   put;
 return;
-%end;
 *----------------------------------------------------------------------------;
 * Write one value. Force quotes when it contains single quote, CR or LF ;
 * Replace any CRLF pair with CR only ;
 *----------------------------------------------------------------------------;
 write:
-  if indexc(__0_value_0__,"'",'0D0A'x) then do;
-     __0_value_0__=  tranwrd(__0_value_0__,'0D0A'x,'0D'x);
-     put __0_value_0__ ~ @;
+  if indexc(_character_(1),"'",'0D0A'x) then do;
+     _character_(1)= tranwrd(_character_(1),'0D0A'x,'0D'x);
+     put _character_(1) ~ @;
   end;
-  else put __0_value_0__ @;
+  else put _character_(1) @;
 return;
 run;
-
+options missing=&optsave;
 %mend safe_ds2csv;
