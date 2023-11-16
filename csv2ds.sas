@@ -12,7 +12,7 @@ Convert a delimited text file into a SAS dataset
 ,getnames=    /* File includes headerline? (0/1) def=YES */
 ,namerow=     /* Row to read for names (default=1) */
 ,datarow=     /* First line to read as data (def=NAMEROW+1) */
-,obs=         /* Number of data lines to read */
+,obs=         /* Number of actual data lines to read */
 ,guessingrows=/* Number of rows used in guessing. (def=MAX) */
 ,percent=     /* Percent of rows sampled in guessing. (def=ALL) */
 ,replace=no   /* Automatically replace existing dataset? (0/1) */
@@ -103,6 +103,7 @@ Modification History
 -----------------------------------------------------------------------
 Revision n.x  yyyy/mm/dd hh:mm:ss  username
 Revision 1.1  2021/10/13 13:50:00  abernt   Initial revision
+Revision 1.2  2023/11/16 10:23:00  abernt   Enhanced uname generation.
 
 ----------------------------------------------------------------------*/
 %local macro parmerr dt file fileopt rc optsave misssave nameobs dataobs;
@@ -188,7 +189,7 @@ make code generation easier.
 %if ^%length(&datarow) %then %let datarow=%eval(&namerow+1);
 %let nameobs=firstobs=&namerow obs=&namerow;
 %let dataobs=firstobs=&datarow;
-%if %length(&obs) %then %let dataobs=&dataobs obs=%eval(&datarow+&obs);
+%if %length(&obs) %then %let dataobs=&dataobs obs=%eval(&datarow+&obs-1);
 
 *----------------------------------------------------------------------------;
 * Save current MISSING statement settings and issue new MISSING statement ;
@@ -363,17 +364,23 @@ quit;
 *----------------------------------------------------------------------------;
 data _types_;
 %if %length(&overrides) %then %do;
-  update _types_ &overrides;
+  update _types_ &overrides end=eof;
 %end;
 %else %do;
-  set _types_;
+  set _types_ end=eof;
 %end;
   by varnum;
-  length upcase $32 suffix 8;
+  length upcase $32 firstvar suffix 8;
   if _n_=1 then do;
-    declare hash h ();
-    h.definekey('upcase','suffix');
-    h.definedone();
+    declare hash u();
+    u.definekey('upcase');
+    u.definedata('firstvar');
+    u.definedone();
+    declare hash v(dataset:'_types_',ordered:'Y');
+    v.definekey('varnum');
+    v.definedata(all:'Y');
+    v.definedone();
+    declare hiter iter('v');
   end;
   if last.varnum;
   upcase=cats('VAR',varnum);
@@ -392,22 +399,41 @@ data _types_;
 %if %sysfunc(getoption(validvarname)) eq UPCASE %then %do;
   name=upcase;
 %end;
-  do suffix=0 to 1E4 while( h.add()
-     or (suffix and not h.check(key:substrn(catx('_',upcase,suffix),1,32),key:0)))
-  ;
-     upcase=substr(upcase,1,32-length(cats(suffix))-1);
+  v.replace();
+  firstvar=varnum;
+  if u.add() then ndups+1;
+  if eof then do;
+*----------------------------------------------------------------------------;
+* Wait till all unique names have been identified before looping over the ;
+* variables again to generate unique names for dups. Write to _TYPES_ ;
+*----------------------------------------------------------------------------;
+    rc=iter.first();
+    do while (rc=0);
+      upcase=upcase(name);
+      u.find();
+      suffix=0;
+      if varnum ne firstvar then do;
+        firstvar=varnum;
+        do suffix=0 by 1 while(u.add());
+          upcase=cats(substr(upcase,1,31-length(cats(suffix+1))),'_',suffix+1);
+        end;
+      end;
+      if suffix>0 then name
+         = cats(substr(name,1,length(upcase)-length(cats(suffix))-1),'_',suffix)
+      ;
+      if name=label then label=' ';
+      if maxlength > &maxchar and type='char' then do;
+        length="$&maxchar";
+        put 'WARNING: Column ' varnum +(-1) ', ' name :$quote. ', might be '
+            'truncated. Setting length to ' length 'but longest value seen '
+            'was '  maxlength :comma20. 'bytes long.'
+        ;
+      end;
+      output;
+      rc=iter.next();
+    end;
   end;
-  if suffix then name=cats(substr(upcase,1,32-length(cats(suffix))-1),'_',suffix);
-
-  if name=label then label=' ';
-  if maxlength > &maxchar and type='char' then do;
-    length="$&maxchar";
-    put 'WARNING: Column ' varnum +(-1) ', ' name :$quote. ', might be truncated. '
-        'Setting length to ' length 'but longest value seen was '
-        maxlength :comma20. 'bytes long.'
-    ;
-  end;
-  drop upcase suffix ;
+  drop upcase firstvar suffix ;
 run;
 
 *----------------------------------------------------------------------------;
