@@ -59,7 +59,7 @@ Usage Notes:
 
 ----------------------------------------------------------------------------*/
 %local parmerr memfound mvs ftype qfilespec datastep inputstmt rc cport;
-%local i member memlistn memlistp ;
+%local i member memlistp ;
 %let parmerr=0;
 %let memfound=0;
 %let cport=0;
