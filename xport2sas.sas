@@ -45,7 +45,7 @@ Usage Notes:
     common multiple of 320 and the observation length to avoid reading
     across input buffers. Uses 320 instead of just 80 to insure that LRECL
     is larger than 256.  In theory this might be too large a value for
-    some datasets, in which case you should force it to use RECFM=N.
+    some datasets, in which case you should force it to use RECFM=F.
 - The default RECFM for MVS is F because according to XPT2LOC macro code
     on MVS RECFM=N does not work properly (claim has not been tested).
 - Use RECFM=F when reading multiple files, such as all members in a ZIP file.
