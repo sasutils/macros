@@ -115,15 +115,17 @@ When SASCODE is not specified then make a temporary file and remove it after.
 %*----------------------------------------------------------------------------
 Make sure LIBREF is valid name and exists.
 -----------------------------------------------------------------------------;
-%if %length(&libref) %then %do;
-  %let parmerr=1;
+%if 0=%length(&libref) %then %let libref=WORK;
+%else %do;
   %if %length(&libref)>8 or not %sysfunc(nvalid(&libref,v7)) %then %do;
     %put ERROR: &=libref is not a valid SAS name.;
+    %let parmerr=1;
   %end;
-  %else %if %sysfunc(libref(&libref)) %then %put ERROR: &=libref is not defined.;
-  %else %let parmerr=0;
+  %else %if %sysfunc(libref(&libref)) %then %do;
+    %put ERROR: &=libref is not defined.;
+    %let parmerr=1;  
+  %end;
 %end;
-%else %let libref=WORK;
 
 %*----------------------------------------------------------------------------
 Set default for RECFM based on whether or not running on MVS.
