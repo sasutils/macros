@@ -29,7 +29,7 @@ Enhancements over XPT2LOC macro include:
   - Binary zeros in character fields.
 - Allows forcing file to be read using RECFM=F.
   - Needed when RECFM=N does not work properly.
-  - RECFM=N code will not conflict with any dataset variable names.
+  - RECFM=F code will not conflict with any dataset variable names.
 - Includes macro parameter validation.
 - Allows saving metadata to a dataset.
 - Allows saving generated code to a file.
