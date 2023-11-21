@@ -443,7 +443,7 @@ Replace any binary zeros in character fields with spaces.
     informn_len = lengthn(informn);
 /*----------------------------------------------------------------------------
 For V8/V9 read long name and actual lengths of LABEL, FORMAT and INFORMAT.
-Also use when first 8 bytes of extended name match short name.
+Also when not all zeros then assume created by SAS2XPORT macro and use.
 ----------------------------------------------------------------------------*/
     if rectype='NAMSTV8' or not indexc(substr(buffer,89,40),'00'x) then do;
        name      =   input(substr(buffer, 89,32),$ascii32.);
