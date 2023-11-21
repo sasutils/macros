@@ -48,7 +48,7 @@ Usage Notes:
     some datasets, in which case you should force it to use RECFM=N.
 - The default RECFM for MVS is F because according to XPT2LOC macro code
     on MVS RECFM=N does not work properly (claim has not been tested).
-- Use RECFM=N when reading multiple files, such as all members in a ZIP file.
+- Use RECFM=F when reading multiple files, such as all members in a ZIP file.
 - Creates the following series of local macro variables (one per dataset).
   first_recN   ...  Starting 80 byte record for member N
   first_byteN  ...  Starting location for member N
