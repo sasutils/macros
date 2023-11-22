@@ -447,7 +447,7 @@ Replace any binary zeros in character fields with spaces.
 For V8/V9 read long name and actual lengths of LABEL, FORMAT and INFORMAT.
 Also when not all zeros then assume created by SAS2XPORT macro and use.
 ----------------------------------------------------------------------------*/
-    if rectype='NAMSTV8' or not indexc(substr(buffer,89,40),'00'x) then do;
+    if rectype='NAMSTV8' or verify(substr(buffer,89,38),'00'x) then do;
        name      =   input(substr(buffer, 89,32),$ascii32.);
        label_len =   input(substr(buffer,121, 2),s370fpib2.);
        formatn_len = input(substr(buffer,123, 2),s370fpib2.);
