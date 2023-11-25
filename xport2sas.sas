@@ -2,12 +2,12 @@
 /*----------------------------------------------------------------------------
 Convert SAS XPORT file to SAS dataset(s)
 ----------------------------------------------------------------------------*/
-(filespec    /* Fileref or quoted physical name of XPORT file (REQ) */
-,libref=     /* Target library. (Default=WORK) */
+(file        /* Fileref or quoted physical name of XPORT file (REQ) */
+,libref      /* Target library. (Default=WORK) */
 ,memlist=    /* Space delimited member name list. (default=_ALL_) */
 ,out=        /* Name of dataset to store metadata. (Optional) */
-,sascode=    /* Fileref or quoted physical name of generated SAS code file (OPT) */
-,recfm=      /* F or N to use INFILE. (Default=N except on MVS/OS) */
+,sascode=    /* Fileref or quoted physical name of generated SAS code (OPT) */
+,recfm=      /* Record format to read data. (Default=N except on MVS/OS) */
 );
 /*----------------------------------------------------------------------------
 XPORT2SAS is a cleaned up version of XPT2LOC autocall macro for converting
@@ -58,36 +58,80 @@ Usage Notes:
 - Uses newer SAS features, so on older SAS versions might need to use XPT2LOC.
 
 ----------------------------------------------------------------------------*/
-%local parmerr memfound mvs ftype qfilespec datastep inputstmt rc cport;
-%local i member memlistp ;
+%local parmerr memfound mvs ftype qfile datastep inputstmt rc cport;
+%local i member memlistp note warn err ;
 %let parmerr=0;
 %let memfound=0;
 %let cport=0;
 %let mvs=%eval("&sysscp"="OS");
+%let note=putlog "NOTE: &sysmacroname: ";
+%let warn=putlog 'WARN' "ING: &sysmacroname: ";
+%let err =putlog 'ERR' "OR: &sysmacroname: ";
 
 %*----------------------------------------------------------------------------
 Validate input parameters.
 -----------------------------------------------------------------------------;
 
 %*----------------------------------------------------------------------------
-Make sure FILESPEC is either an existing FILEREF or an existing FILE.
+Make sure FILE is either an existing FILEREF or an existing FILE.
 -----------------------------------------------------------------------------;
 %let ftype=;
-%if %length(&filespec) %then %do;
-  %if %length(&filespec)<=8 & %sysfunc(nvalid(&filespec,v7)) %then %do;
-    %if 0=%sysfunc(fileref(&filespec)) %then %let ftype=fileref;
+%if %length(&file) %then %do;
+  %if %length(&file)<=8 and %sysfunc(nvalid(&file,v7)) %then %do;
+    %if 0=%sysfunc(fileref(&file)) %then %let ftype=fileref;
   %end;
-  %if (&ftype=) and %sysfunc(fileexist(&filespec)) %then %do;
+  %if (&ftype=) and %sysfunc(fileexist(&file)) %then %do;
     %let ftype=file;
-    %let filespec=%sysfunc(quote(%qsysfunc(dequote(&filespec)),%str(%')));
+    %let file=%sysfunc(quote(%qsysfunc(dequote(&file)),%str(%')));
   %end;
 %end;
 %if 0=%length(&ftype) %then %do;
-  %if 0=%length(&filespec) %then %put ERROR: FILESPEC is required.;
-  %else %put ERROR: XPORT file not found. &=filespec ;
+  %if 0=%length(&file) %then %put ERROR: &sysmacroname: FILE is required.;
+  %else %put ERROR: &sysmacroname: XPORT file not found. &=file ;
 %end;
 %if 0=%length(&ftype) %then %let parmerr=1;
-%let qfilespec=%sysfunc(quote(&filespec,%str(%')));
+%let qfile=%sysfunc(quote(&file,%str(%')));
+
+%*----------------------------------------------------------------------------
+Make sure LIBREF is valid name and exists.
+-----------------------------------------------------------------------------;
+%if 0=%length(&libref) %then %let libref=WORK;
+%else %do;
+  %if %length(&libref)>8 or not %sysfunc(nvalid(&libref,v7)) %then %do;
+    %put ERROR: &sysmacroname: &=libref is not a valid SAS name.;
+    %let parmerr=1;
+  %end;
+  %else %if %sysfunc(libref(&libref)) %then %do;
+    %put ERROR: &sysmacroname: &=libref is not defined.;
+    %let parmerr=1;
+  %end;
+%end;
+
+%*----------------------------------------------------------------------------
+Create MEMLISTP from MEMLIST.
+-----------------------------------------------------------------------------;
+%if 0=%length(&memlist) %then %let memlist=_ALL_;
+%else %do i=1 %to %sysfunc(countw(&memlist,%str( ),q));
+  %let member=%qscan(&memlist,&i,%str( ),q);
+  %if %sysfunc(nvalid(&member,nliteral)) %then %do;
+    %let memlistp=&memlistp|%qsysfunc(dequote(&member));
+  %end;
+  %else %do;
+    %put ERROR: &sysmacroname: &member is not a valid member name.;
+    %let parmerr=1;
+  %end;
+%end;
+
+%*----------------------------------------------------------------------------
+Make sure OUT parameter at least looks like a dataset name.
+-----------------------------------------------------------------------------;
+%if 0=%length(&out) %then %let out=_null_;
+%else %do;
+  %if %sysfunc(countw(&out,.,q))>2 %then %do;
+    %put ERROR: &sysmacroname: &=out invalid. Cannot have more than two levels.;
+    %let parmerr=1;
+  %end;
+%end;
 
 %*----------------------------------------------------------------------------
 Make sure SASCODE is either an existing FILEREF or valid as a filename.
@@ -100,39 +144,24 @@ When SASCODE is not specified then make a temporary file and remove it after.
   %end;
   %if (&ftype=) %then %do;
     %if %sysfunc(filename(ftype,&sascode))<=0 %then %do;
-       %let rc=%sysfunc(filename(ftype));
-       %let ftype=file;
-       %let sascode=%sysfunc(quote(%qsysfunc(dequote(&sascode)),%str(%')));
+      %let rc=%sysfunc(filename(ftype));
+      %let ftype=file;
+      %let sascode=%sysfunc(quote(%qsysfunc(dequote(&sascode)),%str(%')));
     %end;
   %end;
 %end;
 %else %do;
   %if 0=%sysfunc(filename(sascode,,temp)) %then %let ftype=temp;
-  %else %put ERROR: Unable to create temporary file for SASCODE.;
+  %else %put ERROR: &sysmacroname: Unable to create temporary file for SASCODE.;
 %end;
 %if 0=%length(&ftype) %then %let parmerr=1;
-
-%*----------------------------------------------------------------------------
-Make sure LIBREF is valid name and exists.
------------------------------------------------------------------------------;
-%if 0=%length(&libref) %then %let libref=WORK;
-%else %do;
-  %if %length(&libref)>8 or not %sysfunc(nvalid(&libref,v7)) %then %do;
-    %put ERROR: &=libref is not a valid SAS name.;
-    %let parmerr=1;
-  %end;
-  %else %if %sysfunc(libref(&libref)) %then %do;
-    %put ERROR: &=libref is not defined.;
-    %let parmerr=1;  
-  %end;
-%end;
 
 %*----------------------------------------------------------------------------
 Set default for RECFM based on whether or not running on MVS.
 -----------------------------------------------------------------------------;
 %if %length(&recfm) %then %do;
   %if %length(&recfm)>1 or %sysfunc(verify(%superq(recfm),FNfn)) %then %do;
-    %put ERROR: &=recfm is invalid. Valid values are F or N. ;
+    %put ERROR: &sysmacroname: &=recfm is invalid. Valid values are F or N. ;
     %let parmerr=1;
   %end;
   %else %let recfm=%upcase(&recfm);
@@ -141,58 +170,16 @@ Set default for RECFM based on whether or not running on MVS.
 %else %let recfm=N ;
 
 %*----------------------------------------------------------------------------
-Make sure OUT parameter at least looks like a dataset name.
------------------------------------------------------------------------------;
-%if 0=%length(&out) %then %let out=_null_;
-%else %do;
-  %if %sysfunc(countw(&out,.,q))>2 %then %do;
-    %put ERROR: &=out invalid. Cannot have more than two levels.;
-    %let parmerr=1;
-  %end;
-%end;
-
-%*----------------------------------------------------------------------------
-Create MEMLISTP from MEMLIST.
------------------------------------------------------------------------------;
-%if 0=%length(&memlist) %then %let memlist=_ALL_;
-%do i=1 %to %sysfunc(countw(&memlist,%str( ),q));
-  %let member=%qscan(&memlist,&i,%str( ),q);
-  %if %sysfunc(nvalid(&member,nliteral)) %then %do;
-    %let memlistp=&memlistp|%qsysfunc(dequote(%qupcase(&member)));
-  %end;
-  %else %do;
-    %put ERROR: &sysmacroname: &member is not a valid member name.;
-    %let parmerr=1;
-  %end;
-%end;
-
-%if (&parmerr) %then %goto quit;
-
-%*----------------------------------------------------------------------------
 Create temporary files for writing the SAS code while reading metadata.
 Use RECFM=F just in case any label strings contain end of line characters.
 -----------------------------------------------------------------------------;
 %if %sysfunc(filename(datastep,,temp,recfm=f lrecl=1024))
  or %sysfunc(filename(inputstmt,,temp,recfm=f lrecl=1024)) %then %do;
-  %put ERROR: Unable to allocate temporary files for writing code. ;
+  %put ERROR: &sysmacroname: Unable to allocate temporary files for writing code. ;
   %let parmerr=1;
 %end;
 
 %if (&parmerr) %then %goto quit;
-
-%if (&recfm=F) %then %do;
-%*----------------------------------------------------------------------------
-Local macro variables used to allow generatation of input code that uses only
-temporary variables and arrays to avoid conflict with any dataset variables.
------------------------------------------------------------------------------;
-  %local len col loc part buffer record ;
-  %let len=_numeric_(1);
-  %let col=_numeric_(2);
-  %let loc=_numeric_(3);
-  %let part=_n_;
-  %let buffer=_char_(1);
-  %let record=_character_(1);
-%end;
 
 /*----------------------------------------------------------------------------
 This DATA step will read through the entire transport file.
@@ -203,10 +190,10 @@ requested datasets.
 Writes the code into two separate files which will later be interleaved.
 ---------------------------------------------------------------------------*/
 data &out;
-  infile &filespec. recfm=f lrecl=80 eof=atend;
-  length memnum skip 8 memname $32 typemem $8 varnum 8 name $32 typen 8 type $4
-         length 8 format informat $49 label $256 nvar nobs obslen maxvar 8
-         memlabel $40 sasver $8 osname $8 crdate modate 8
+  infile &file. recfm=f lrecl=80 eof=atend;
+  length MEMNUM SKIP 8 MEMNAME $32 TYPEMEM $8 VARNUM 8 NAME $32 TYPEN 8 TYPE $4
+         LENGTH 8 FORMAT INFORMAT $49 LABEL $256 NVAR NOBS OBSLEN MAXVAR 8
+         MEMLABEL $40 SASVER OSNAME $8 CRDATE MODATE 8
          rectype $8 formatn informn $32 nliteral $67
          record lastrec $80 buffer qstr $512
   ;
@@ -218,12 +205,14 @@ data &out;
   retain obslen 0 maxvar 0 nlabels 0 nobs .;
 
 /*----------------------------------------------------------------------------
-Check for header record and process based the record type.
+Detect CPORT file and stop metadata scan.
+Check for header record and process based on the record type.
+Remember last non header record in case NOBS is not specified in header.
 ----------------------------------------------------------------------------*/
   len=80; link read; buffer=input(buffer,$ascii80.);
   if _n_=1 then if buffer=:'**COMPRESSED** **COMPRESSED** **COMPRESSED** '
         ||'**COMPRESSED** **COMPRESSED********' then do;
-    putlog "NOTE: &sysmacroname: File is a CPORT file not an XPORT file.";
+    &note 'File is a CPORT file not an XPORT file.';
     call symputx('cport','1');
     stop;
   end;
@@ -245,7 +234,6 @@ atend:;
 /*----------------------------------------------------------------------------
 INFILE statement EOF= option directs here when end of file is reached.
 ----------------------------------------------------------------------------*/
-  recnum+1;
   call symputx('memfound',memfound,'L');
 
 fobslobs:;
@@ -259,7 +247,7 @@ Store NOBS, FIRSTOBS, MAXVAR and FIRSTBYTE into macro variables.
 ----------------------------------------------------------------------------*/
   if nvar=0 then nobs=0;
   if nobs=. then do;
-    nobs=max(0,floor((recnum-firstobs-1-extra_library)*80 / obslen));
+    nobs=max(0,floor((recnum-firstobs-extra_library)*80 / obslen));
     if obslen<80 and nobs>0 then do;
       j=mod(nobs*obslen,80);
       if j=0 then j=80;
@@ -292,7 +280,7 @@ span the 80 byte boundary. It will also keep track of the number of records.
     partl=max(0,min(80-col+1,len2));
     input record $varying80. partl @@;
     substr(buffer,loc,partl)=record;
-    loc+partl; col+partl; len2=len2-partl;
+    loc+partl; col+partl; len2+-partl;
   end;
 return;
 
@@ -318,8 +306,8 @@ Process the MEMBER record.
   memnum+1; skip=0;
   nreclen=input(substr(buffer,76),4.);
   if nreclen not in (136 140) then do;
-    putlog 'WARNING: Invalid name record length ' nreclen 'on ' rectype
-           'record. Will use 140 bytes.';
+    &warn "invalid name record length " nreclen
+          'on rectype record. Will use 140 bytes.';
     nreclen=140;
   end;
 return;
@@ -348,7 +336,7 @@ Start writing the SAS code to read the dataset.
   typemem=substr(buffer,153,8);
 %if (%superq(memlist) ne _ALL_) %then %do;
   if not findw("&memlistp",memname,'|','iros') then do;
-     putlog 'NOTE: Skipping member ' nliteral ;
+     &note "Skipping member " nliteral ;
      skip=1;
   end;
 %end;
@@ -369,17 +357,20 @@ For RECFM=N set LRECL to least common multiple of 320 and the obs length.
     if cmiss(typemem,memlabel)<2 then put ')' @;
     put ';' / 'if _n_>&nobs' memnum +(-1) '. then stop;';
 %if (&recfm=F) %then %do;
-    put 'infile ' &qfilespec ' recfm=f lrecl=80 '
-        'firstobs=&first_rec' memnum +(-1) '.;'
-      / 'array &loc _temporary_ (1 1 1);'
-      / 'array &buffer $&maxvar' memnum +(-1) '. _temporary_ ;'
-      / 'array &record $80 _temporary_;'
+%*----------------------------------------------------------------------------
+Use temporary arrays with names that are not valid as variable names to avoid
+any possibility of a conflict with the name of any dataset variables.
+-----------------------------------------------------------------------------;
+    put 'infile ' &qfile ' recfm=f lrecl=80 firstobs=&first_rec' memnum ';'
+      / 'array _numeric_(3) _temporary_ (1 1 1);'
+      / 'array _char_(1) $&maxvar' memnum '_temporary_ ;'
+      / 'array _character_(1) $80 _temporary_;'
     ;
 %end;
 %else %do;
-    put 'infile ' &qfilespec ' unbuffered recfm=n lrecl='
-        '%sysfunc(lcm(320,&obslen' memnum +(-1) '.));'
-      / 'if _n_=1 then input @&first_byte' memnum +(-1) '. @;'
+    put 'infile ' &qfile ' unbuffered recfm=n lrecl='
+        '%sysfunc(lcm(320,%sysfunc(max(1,&obslen' memnum '))));'
+      / 'if _n_=1 then input @&first_byte' memnum '@;'
     ;
 *----------------------------------------------------------------------------;
 * Write start of INPUT statement ;
@@ -412,13 +403,14 @@ Generate LENGTH and any FORMAT, INFORMAT or LABEL statements needed.
     informl  = input(substr(buffer, 81, 2),s370fpib2.);
     informd  = input(substr(buffer, 83, 2),s370fpib2.);
     obslen+length;
+    maxvar=max(maxvar,length);
 /*----------------------------------------------------------------------------
 Convert typen to type. Check for invalid values.
 ----------------------------------------------------------------------------*/
     if typen=1 then type='num'; else if typen=2 then type='char';
     else do;
-      putlog 'WARNING: Invalid variable type= ' typen '. Will use CHAR.'
-            memnum= varnum= name=:$quote. ;
+      &warn "Invalid variable type= " typen
+            '. Will treat as char. ' memnum= varnum= name=:$quote. ;
       typen=2; type='char';
     end;
 /*----------------------------------------------------------------------------
@@ -426,34 +418,35 @@ Replace any binary zeros in character fields with spaces.
 ----------------------------------------------------------------------------*/
     if index(name,'00'x) then do;
       name=translate(name,' ','00'x);
-      putlog 'WARNING: Removed binary zeros from NAME. ' memnum= varnum=;
+      &warn 'Removed binary zeros from NAME. ' memnum= varnum=;
     end;
     if index(label,'00'x) then do;
-      putlog 'WARNING: Removed binary zeros from LABEL. ' memnum= varnum=;
+      &warn 'Removed binary zeros from LABEL. ' memnum= varnum=;
       label=translate(label,' ','00'x);
     end;
     if index(formatn,'00'x) then do;
-      putlog 'WARNING: Removed binary zeros from FORMAT name. ' memnum= varnum=;
+      &warn 'Removed binary zeros from FORMAT name. ' memnum= varnum=;
       formatn=translate(formatn,' ','00'x);
     end;
     if index(informn,'00'x) then do;
-      putlog 'WARNING: Removed binary zeros from INFORMAT name. ' memnum= varnum=;
+      &warn 'Removed binary zeros from INFORMAT name. ' memnum= varnum=;
       informn=translate(informn,' ','00'x);
     end;
-    label_len   = lengthn(label);
-    formatn_len = lengthn(formatn);
-    informn_len = lengthn(informn);
+    if verify(substr(buffer,89,38),'00'x) then do;
 /*----------------------------------------------------------------------------
-For V8/V9 read long name and actual lengths of LABEL, FORMAT and INFORMAT.
-Also when not all zeros then assume created by SAS2XPORT macro and use.
+V9 files (and V5 files written by SAS2XPORT) store full variable name and
+actual lengths of LABEL, FORMATN and INFORMN in positions 89 to 126.
 ----------------------------------------------------------------------------*/
-    if rectype='NAMSTV8' or verify(substr(buffer,89,38),'00'x) then do;
-       name      =   input(substr(buffer, 89,32),$ascii32.);
-       label_len =   input(substr(buffer,121, 2),s370fpib2.);
-       formatn_len = input(substr(buffer,123, 2),s370fpib2.);
-       informn_len = input(substr(buffer,125, 2),s370fpib2.);
+      name      =   input(substr(buffer, 89,32),$ascii32.);
+      label_len =   input(substr(buffer,121, 2),s370fpib2.);
+      formatn_len = input(substr(buffer,123, 2),s370fpib2.);
+      informn_len = input(substr(buffer,125, 2),s370fpib2.);
     end;
-    maxvar=max(maxvar,length);
+    else do;
+      label_len   = lengthn(label);
+      formatn_len = lengthn(formatn);
+      informn_len = lengthn(informn);
+    end;
     nliteral=nliteral(name);
 /*----------------------------------------------------------------------------
 Build FORMAT and INFORMAT from NAME, WIDTH and DECIMAL values.
@@ -491,7 +484,7 @@ Build FORMAT and INFORMAT from NAME, WIDTH and DECIMAL values.
       put nliteral qstr ;
 %end;
 %else %do;
-      put '&len=' length ';link read;' nliteral '=input(&buffer,' qstr ');';
+      put '_numeric_(1)=' length ';link read;' nliteral '=input(_char_(1),' qstr ');';
 %end;
     end;
   end;
@@ -518,7 +511,7 @@ Read in V8/V9 LABEL record
     name=substrn(buffer,1,name_len);
     label=substrn(buffer,name_len+1,label_len);
     if indexc(cats(name,label),'00'x) then do;
-       putlog 'WARNING: Removing binary zeros from NAME or LABEL.' memnum= varnum=;
+       &warn 'Removing binary zeros from NAME or LABEL.' memnum= varnum=;
        name=translate(name,' ','00'x);
        label=translate(label,' ','00'x);
     end;
@@ -528,17 +521,17 @@ Read in V8/V9 LABEL record
       format=substrn(buffer,1,formatn_len);
       informat=substrn(buffer,formatn_len+1,informn_len);
       if indexc(format,'00'x) then do;
-         putlog 'WARNING: Removing binary zeros from FORMAT for ' memnum= varnum= nliteral ;
+         &warn 'Removing binary zeros from FORMAT for ' memnum= varnum= nliteral ;
          format=translate(format,' ','00'x);
       end;
       if indexc(informat,'00'x) then do;
-         putlog 'WARNING: Removing binary zeros from INFORMAT for ' memnum= varnum= nliteral ;
+         &warn 'Removing binary zeros from INFORMAT for ' memnum= varnum= nliteral ;
          informat=translate(informat,' ','00'x);
       end;
       if format ne ' ' then do;
         if format in ('$.' '.') or 0=indexc(format,'.') then do;
-          putlog 'WARNING: Removing invalid ' format=:$quote.
-                 'from variable ' nliteral 'in ' memname
+          &warn 'Removing invalid ' format=:$quote.
+                'from variable ' nliteral 'in ' memname
           ;
           format=' ';
         end;
@@ -548,8 +541,8 @@ Read in V8/V9 LABEL record
       formatd=input('0'||substrn(format,findc(format,'.')+1),??32.);
       if informat ne ' ' then do;
         if informat in ('$.' '.') or 0=indexc(informat,'.') then do;
-          putlog 'WARNING: Removing invalid ' informat=:$quote.
-                 'from variable ' nliteral 'in ' memname
+          &warn 'Removing invalid ' informat=:$quote.
+                'from variable ' nliteral 'in ' memname
           ;
           informat=' ';
         end;
@@ -596,17 +589,17 @@ Write code that follows the input statement to the main program.
     file &datastep;
     put '/* INPUT STATEMENT START */';
 %if (&recfm=F) %then %do;
-    if nvar then put 'return;'
-       /'read:'
-       /"  &buffer=' '; &loc=1;"
-       /"  do while(&len>0);"
-       /"    if &col>80 then &col=1;"
-       /"    &part=max(0,min(80-&col+1,&len));"
-       /"    input &record $varying80. &part @@;"
-       /"    substr(&buffer,&loc,&part)=&record;"
-       /"    &len+-&part;"
-       /"    &col+&part;"
-       /"    &loc+&part;"
+    if nvar then put "return;"
+       /"read:"
+       /"  _char_(1)=' '; _numeric_(3)=1;"
+       /"  do while(_numeric_(1)>0);"
+       /"    if _numeric_(2)>80 then _numeric_(2)=1;"
+       /"    _n_=max(0,min(80-_numeric_(2)+1,_numeric_(1)));"
+       /"    input _character_(1) $varying80. _n_ @@;"
+       /"    substr(_char_(1),_numeric_(3),_n_)=_character_(1);"
+       /"    _numeric_(1)+-_n_;"
+       /"    _numeric_(2)+_n_;"
+       /"    _numeric_(3)+_n_;"
        /"  end;"
        /"return;"
     ;
@@ -625,13 +618,18 @@ run;
 /*----------------------------------------------------------------------------
 Found CPORT file instead of XPORT file so generate PROC CIMPORT code.
 ----------------------------------------------------------------------------*/
-  proc cimport file=&filespec lib=&libref;
-    select &memlist ;
-  run;
-  %goto quit;
+data _null_ ;
+  file &sascode ;
+  put 'proc cimport file=' &qfile " lib=&libref;"
+  %if (%superq(memlist) ne _ALL_) %then %do;
+    / "  select &memlist ;"
+  %end;
+    / 'run;'
+  ;
+run;
 %end;
-
-%if (%qupcase(&out) ne _NULL_) %then %do;
+%else %do;
+  %if (%qupcase(&out) ne _NULL_) %then %do;
 /*----------------------------------------------------------------------------
 Update the NAME metadata with LABEL metadata. Get member summary variables.
 ----------------------------------------------------------------------------*/
@@ -645,12 +643,15 @@ data &out;
   obslen=symgetn(cats('obslen',memnum));
   maxvar=symgetn(cats('maxvar',memnum));
 run;
-%end;
+  %end;
 
-%if (0=&memfound) %then %do;
-  %put NOTE: No members in &=memlist were found.;
-%end;
-%else %do;
+  %if (0=&memfound) %then %do;
+data _null_;
+  file &sascode;
+  put '%put NOTE: &sysmacroname: No members in &=memlist were found.;';
+run;
+  %end;
+  %else %do;
 /*----------------------------------------------------------------------------
 Read back in the two generated code files and combine them so that the input
 statements are in the right place.
@@ -692,12 +693,13 @@ data _null_;
   len=lengthn(_infile_);
   put _infile_ $varying1024. len;
 run;
+  %end;
+%end;
 
 *----------------------------------------------------------------------------;
 * Run the generated SAS code ;
 *----------------------------------------------------------------------------;
 %include &sascode;
-%end;
 
 %quit:
 /*----------------------------------------------------------------------------
