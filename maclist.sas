@@ -49,7 +49,7 @@ data &out ;
   end;
 
   set sashelp.vcatalg;
-  where libname='WORK' and memname='SASMACR'
+  where libname='WORK' and memname like 'SASMAC_'
     and memtype='CATALOG' and objtype='MACRO';
   macro=objname;
   file=lowcase(trim(macro))||'.sas';
