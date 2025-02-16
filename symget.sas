@@ -11,7 +11,7 @@ Get value for macro variable that is hidden by local macro variable
 Use SASHELP.VMACRO to pull value for a macro variable that is hidden by
 local macro variables with the same name.
 -----------------------------------------------------------------------
-$Calls to: qlist.sas
+$Calls to: -none-
 -----------------------------------------------------------------------
 Usage:
 
@@ -64,10 +64,9 @@ Set scope to GLOBAL when no criteria specified. Exclude this macro.
 Open the SASHELP.VMACRO and link dataset variables to macro variables.
 Fetch first observation to get SCOPE and NAME. Close SASHELP.VMACRO.
 -----------------------------------------------------------------------;
-  %if %length(&include) %then %let where=scope in %qlist(%upcase(&include));
-  %else %if 0=%length(&exclude) %then %let where=scope='GLOBAL';
-  %else %let where=scope not in %qlist(%upcase(&macro &exclude));
-  %let where=name="%upcase(&mvar)" and &where;
+  %if %length(&include) %then %let where=findw("&include",scope,'','ir');
+  %else %let where=not findw("&macro &exclude",scope,'','ir');
+  %let where=name=%upcase("&mvar") and &where;
   %let did=%sysfunc(open(sashelp.vmacro(where=(&where))));
   %syscall set(did);
   %let rc=%sysfunc(fetch(&did));
