@@ -44,11 +44,9 @@ History:
 
 %if "&recurse"="0" %then %do;
 %*----------------------------------------------------------------------
-Open SASHELP.VMACRO and link dataset variables to macro variables.
-If a match is found then expand VALUE as the result of the macro call.
-Loop until all observations are read or OFFSET=0 indicates that the
-start of another instance of the same variable has begun.
-Close SASHELP.VMACRO.
+Return raw VALUE including any trailing spaces from SASHELP.VMACRO as
+the result of the macro call. Stop when all observations are read or 
+OFFSET=0 indicates that the start of another instance variable has begun.
 -----------------------------------------------------------------------;
   %let where=%upcase(name="&mvar" and scope="&include");
   %let did=%sysfunc(open(sashelp.vmacro(where=(&where))));
@@ -60,9 +58,10 @@ Close SASHELP.VMACRO.
 %end;
 %else %if %bquote(&mvar)^= %then %do;
 %*----------------------------------------------------------------------
-Set scope to GLOBAL when no criteria specified. Exclude this macro.
-Open the SASHELP.VMACRO and link dataset variables to macro variables.
-Fetch first observation to get SCOPE and NAME. Close SASHELP.VMACRO.
+Use FINDW() to filter SCOPE.  Include this macro in EXCLUDE list.
+Fetch first observation to get SCOPE and NAME. Call this macro
+recursively to retrive value into local macro variable.
+Return value of local macro variable.
 -----------------------------------------------------------------------;
   %if %length(&include) %then %let where=findw("&include",scope,'','ir');
   %else %let where=not findw("&macro &exclude",scope,'','ir');
@@ -72,10 +71,6 @@ Fetch first observation to get SCOPE and NAME. Close SASHELP.VMACRO.
   %let rc=%sysfunc(fetch(&did));
   %let did=%sysfunc(close(&did));
   %if (0=&rc) %then %do;
-%*----------------------------------------------------------------------
-Found a variable so get value from recursive call to the macro.
-Expand value as result of macro call.
------------------------------------------------------------------------;
     %let value=%&macro(&name,include=&scope,recurse=0);
 &value.
   %end;
