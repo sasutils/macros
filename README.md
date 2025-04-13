@@ -5,12 +5,12 @@ A collection of SAS macros of general utility that enhance or extend the SAS mac
 
 Macros that return no code at all
  
-[bench](bench.sas) [fread(mode=2)](fread.sas) [macdelete](macdelete.sas) [nobs(mvar=)](nobs.sas)
-[parmv](parmv.sas) [syslput612](syslput612.sas)
+[bench](bench.sas) [dblibchk](dblibchk.sas) [fread(mode=2)](fread.sas) [macdelete](macdelete.sas) 
+[nobs(mvar supplied)](nobs.sas) [parmv](parmv.sas) [syslput612](syslput612.sas)
 
 Macros that return string
 
-[catx](catx.sas) [compbl](compbl.sas) [curdir](curdir.sas) [dblibchk](dblibchk.sas)
+[catx](catx.sas) [compbl](compbl.sas) [curdir](curdir.sas) 
 [direxist](direxist.sas)  [dquote](dquote.sas) [fileref](fileref.sas)  [fread](fread.sas)
 [lowcase](lowcase.sas) [missing](missing.sas)  [mvartest](mvartest.sas) [nobs](nobs.sas)
 [nvalid](nvalid.sas)  [parsem](parsem.sas) [qcatx](qcatx.sas) [qcompbl](qcompbl.sas) 
