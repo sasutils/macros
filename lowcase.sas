@@ -1,8 +1,10 @@
 %macro lowcase/parmbuff;
 /*----------------------------------------------------------------------
-Replacement for SAS supplied LOWCASE macro that eliminates errors when 
-value contains commas.  The %IF conditions make sure the argument is
-not empty.
+Replacement for SAS supplied LOWCASE macro that eliminates errors 
+
+SYSPBUFF must have at least 3 characters or nothing was passed in.
+Use SYSPBUFF to generate %QUOTE function call so value can be passed
+to %SYSFUNC(LOWCASE()).
 ----------------------------------------------------------------------*/
-%if %length(&syspbuff) %then %if %length&syspbuff %then %sysfunc(lowcase&syspbuff);
+%if %length(&syspbuff)>2 %then %sysfunc(lowcase(%quote&syspbuff));
 %mend;
