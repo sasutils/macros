@@ -3,7 +3,32 @@ SAS Utility Macros
 
 A collection of SAS macros of general utility that enhance or extend the SAS macro language.
 
+Macros that return no code at all
+ 
+[bench](bench.sas) [fread(mode=2)](fread.sas) [macdelete](macdelete.sas) [nobs(mvar=)](nobs.sas)
+[parmv](parmv.sas) [syslput612](syslput612.sas)
 
+Macros that return string
+
+[catx](catx.sas) [compbl](compbl.sas) [curdir](curdir.sas) [dblibchk](dblibchk.sas)
+[direxist](direxist.sas)  [dquote](dquote.sas) [fileref](fileref.sas)  [fread](fread.sas)
+[lowcase](lowcase.sas) [missing](missing.sas)  [mvartest](mvartest.sas) [nobs](nobs.sas)
+[nvalid](nvalid.sas)  [parsem](parsem.sas) [qcatx](qcatx.sas) [qcompbl](qcompbl.sas) 
+[qlist](qlist.sas) [qlowcase](qlowcase.sas) [qsubtrn](qsubstrn.sas)  [qsysget](qsysget.sas)
+[squote](squote.sas) [substrn](substrn.sas)  [symget](symget.sas) [tdexist](tdexist.sas)
+[varexist](varexist.sas) [varinfo](varinfo.sas) [xpttype](xpttype.sas)
+
+Macros that return SAS statements
+
+Macros that return SAS steps
+
+[cfmtgen](cfmtgen.sas) [contents](contents.sas) [contentv](contentv.sas) [csv2ds](csv2ds.sas)
+[csvfile](csvfile.sas) [dbcon](dbcon.sas)  [dirtree](dirtree.sas) [ds2post](ds2post.sas)
+[dslist](dslist.sas) [github_include](github_include.sas) [maclist](maclist.sas)
+[replace_crlf](replace_crlf.sas) [safe_ds2csv](safe_ds2csv.sas)  [sas2xport](sas2xport.sas)
+[subnet](subnet.sas) [xport2sas](xport2sas.sas)
+
+Alphabetical List - With descriptions
 
 * [bench](bench.sas) - Time interval between calls
 * [catx](catx.sas) - Replicate the SAS function CATX() in macro code
@@ -52,3 +77,5 @@ A collection of SAS macros of general utility that enhance or extend the SAS mac
 * [varinfo](varinfo.sas) - Return information for a variable
 * [xport2sas](xport2sas.sas) - Convert SAS XPORT file to SAS dataset(s)
 * [xpttype](xpttype.sas) - Check file to see what type of transport file it is
+
+
