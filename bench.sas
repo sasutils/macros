@@ -10,12 +10,18 @@ elapsed time and clear the saved time.
 
 Use different values for MVAR to time multiple overlapping periods.
 ----------------------------------------------------------------------*/
-%if (&mvar=) %then %let mvar=_bench;
+%if 0=%length(&mvar) %then %let mvar=_BENCH;
+%else %if ^%sysfunc(nvalid(&mvar,v7)) %then %do;
+  %put ERROR: Macro &sysmacroname user error. 
+&=mvar is not a valid macro variable name.;
+  %return;
+%end;
 %if ^%symexist(&mvar) %then %global &mvar;
 
 %if (&&&mvar =) %then %let &mvar = %sysfunc(datetime());
 %else %do;
-  %put NOTE: Elapsed seconds = %sysevalf(%sysfunc(datetime()) - &&&mvar);
+  %put NOTE: %upcase(&mvar) Elapsed seconds = 
+%sysevalf(%sysfunc(datetime()) - &&&mvar);
   %let &mvar =;
 %end;
 %mend bench;
