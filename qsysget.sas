@@ -20,6 +20,7 @@ environment variable was found.
   0 = Environment variable found.
 ----------------------------------------------------------------------*/
 %let sysrc=0;
-%if -1=%sysfunc(envlen(&name)) %then %let sysrc=1;
+%* Append %STR() to prevent %SYSFUNC() finding too few arguments. ;
+%if -1=%sysfunc(envlen(&name%str())) %then %let sysrc=1;
 %else %qsysfunc(sysget(&name));
 %mend qsysget;
