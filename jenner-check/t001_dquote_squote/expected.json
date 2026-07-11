@@ -1,0 +1,15 @@
+{
+  "_captured_at": "2026-07-11T05:00:00Z",
+  "_captured_run_id": "r_128bf7a13af74f449c4969d5c7429f3a",
+  "status": "ok",
+  "exit_code": 0,
+  "log_contains": [
+    "dquote-plain=\"hello\"",
+    "dquote-with-embedded-dquote=\"say \"hi\"\"",
+    "squote-plain='hello'",
+    "squote-with-embedded-squote='O''Brien'",
+    "NOTE: PROC PRINT completed: 2 observations printed, 4 variables"
+  ],
+  "log_does_not_contain": ["ERROR:", "[JENNER-ERROR"],
+  "diagnostics": {"parse_warnings": [], "runtime_warnings": []}
+}

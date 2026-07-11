@@ -1,0 +1,7 @@
+{
+  "bundle": "t003_fileref",
+  "source_file": "fileref.sas",
+  "source_blob_sha": "25ed1cc644a6f37d56c31728c8fbc0ffbae06992",
+  "source_commit": "c1f45370cbf72e7bd35806712fb2752a62f3e6cb",
+  "notes": "Verifies whether a fileref has been assigned, validating the fileref name itself (blank, over 8 chars, or not a valid SAS name all short-circuit to 1) before delegating to the native FILEREF() function. Caller exercises all four short-circuit paths plus the real delegation for an assigned vs. never-assigned fileref."
+}

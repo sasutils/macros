@@ -1,0 +1,7 @@
+{
+  "bundle": "t001_dquote_squote",
+  "source_file": "dquote.sas, squote.sas",
+  "source_blob_sha": "dquote.sas=1092347d8e3c931fb039758a15db3af0791c9d13; squote.sas=e15b6ea07d8e20ca4a62e84edaf161a1b60bbcb7",
+  "source_commit": "c1f45370cbf72e7bd35806712fb2752a62f3e6cb",
+  "notes": "Both macros wrap SAS QUOTE() to quote a value with double or single quotes, doubling any embedded quote of the same kind. Caller exercises the documented examples plus a round-trip through DEQUOTE() to confirm the quoted text is valid SAS string-literal syntax."
+}

@@ -1,0 +1,23 @@
+NOTE: Option OBS changed to 100.
+NOTE: DATA patients
+
+NOTE: Processing inline DATALINES (3 lines)
+
+NOTE: Read 3 rows from DATALINES.
+NOTE: Wrote patients (3 rows, 3 columns).
+NOTE: DATA elapsed:
+  wall  0.00 seconds
+  cpu   0.00 seconds
+case1: patients contains SEX (varnum=2)
+case2: NOSUCHVAR correctly not found
+case3: NOSUCHDATASET correctly failed to open
+NOTE: DATA check
+
+
+NOTE: Wrote check (4 rows, 3 columns).
+NOTE: DATA elapsed:
+  wall  0.00 seconds
+  cpu   0.00 seconds
+NOTE: PROC PRINT data=check
+
+NOTE: PROC PRINT completed: 4 observations printed, 3 variables

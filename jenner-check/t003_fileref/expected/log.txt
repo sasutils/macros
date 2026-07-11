@@ -1,0 +1,17 @@
+case1 (expect 1, blank fileref name)=1
+case2 (expect 1, name over 8 chars)=1
+case3 (expect 1, invalid SAS name)=1
+case4 (expect positive, never assigned)=1
+NOTE: Option OBS changed to 100.
+NOTE: Fileref MYREF2 assigned to temp file.
+case5 (expect 0, assigned and exists)=0
+NOTE: DATA results
+
+
+NOTE: Wrote results (5 rows, 3 columns).
+NOTE: DATA elapsed:
+  wall  0.00 seconds
+  cpu   0.00 seconds
+NOTE: PROC PRINT data=results
+
+NOTE: PROC PRINT completed: 5 observations printed, 3 variables

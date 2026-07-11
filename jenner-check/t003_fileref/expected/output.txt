@@ -1,0 +1,8 @@
+               case  value  as_expected
+-------------------  -----  -----------
+blank name               1            1
+name over 8 chars        1            1
+invalid SAS name         1            1
+never assigned           1            1
+assigned and exists      0            1
+

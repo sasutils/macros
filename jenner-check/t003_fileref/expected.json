@@ -1,0 +1,15 @@
+{
+  "_captured_at": "2026-07-11T06:40:00Z",
+  "_captured_run_id": "r_25f31ec0ae084d74b3233141418dda5a",
+  "status": "ok",
+  "exit_code": 0,
+  "log_contains": [
+    "case1 (expect 1, blank fileref name)=1",
+    "case2 (expect 1, name over 8 chars)=1",
+    "case3 (expect 1, invalid SAS name)=1",
+    "case5 (expect 0, assigned and exists)=0",
+    "NOTE: PROC PRINT completed: 5 observations printed, 3 variables"
+  ],
+  "log_does_not_contain": ["ERROR:", "[JENNER-ERROR"],
+  "diagnostics": {"parse_warnings": [], "runtime_warnings": []}
+}
