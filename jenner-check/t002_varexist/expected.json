@@ -1,0 +1,14 @@
+{
+  "_captured_at": "2026-07-11T06:30:00Z",
+  "_captured_run_id": "r_e0e65433292743e5b41c5abd9e10d5c8",
+  "status": "ok",
+  "exit_code": 0,
+  "log_contains": [
+    "case1: patients contains SEX (varnum=2)",
+    "case2: NOSUCHVAR correctly not found",
+    "case3: NOSUCHDATASET correctly failed to open",
+    "NOTE: PROC PRINT completed: 4 observations printed, 3 variables"
+  ],
+  "log_does_not_contain": ["ERROR:", "[JENNER-ERROR"],
+  "diagnostics": {"parse_warnings": [], "runtime_warnings": []}
+}

@@ -1,0 +1,7 @@
+{
+  "bundle": "t002_varexist",
+  "source_file": "varexist.sas",
+  "source_blob_sha": "4d4957bcaff096bc1b17f4880017397c4a67d6d7",
+  "source_commit": "c1f45370cbf72e7bd35806712fb2752a62f3e6cb",
+  "notes": "Checks for the existence of a named variable in a dataset via OPEN()/VARNUM()/CLOSE(), returning the variable number or 0. Caller exercises the macro's own documented no-INFO usage pattern (an %IF test for variable presence) against a small inline patient table, plus a nonexistent-dataset case."
+}

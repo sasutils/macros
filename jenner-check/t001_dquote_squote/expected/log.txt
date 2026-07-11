@@ -1,0 +1,15 @@
+dquote-plain="hello"
+dquote-with-embedded-dquote="say "hi""
+squote-plain='hello'
+squote-with-embedded-squote='O''Brien'
+NOTE: Option OBS changed to 100.
+NOTE: DATA check
+
+
+NOTE: Wrote check (2 rows, 4 columns).
+NOTE: DATA elapsed:
+  wall  0.00 seconds
+  cpu   0.00 seconds
+NOTE: PROC PRINT data=check
+
+NOTE: PROC PRINT completed: 2 observations printed, 4 variables

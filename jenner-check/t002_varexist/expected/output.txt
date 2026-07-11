@@ -1,0 +1,7 @@
+variable  varnum  present
+--------  ------  -------
+SEX            2        1
+AGE            3        1
+ID             1        1
+BOGUS          0        0
+
